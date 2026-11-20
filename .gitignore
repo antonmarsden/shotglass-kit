@@ -1,0 +1,4 @@
+# Renders and stills from the test film
+/tests/film/stills/
+*.png
+*.wav

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
+# bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
+env:
+  SHOTGLASS_REV: "9879d846ab4123332d7eabd04f102878e9f84dd8"
+  RUST_TOOLCHAIN: "1.100.0"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: System packages
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev xvfb libgl1-mesa-dri libegl-mesa0 libxkbcommon-x11-0
+      - name: Cached shotglass
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/shotglass
+          key: shotglass-${{ env.SHOTGLASS_REV }}-${{ runner.os }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - name: Build shotglass
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$SHOTGLASS_REV" shotglass
+
+      - name: Every library file is used by the test film
+        run: |
+          missing=0
+          for lib in core transitions; do
+            prefix=$([ "$lib" = core ] && echo kit || echo transitions)
+            for f in $lib/*.glsl; do
+              inc="#include <$prefix/$(basename "$f")>"
+              if ! grep -rqF "$inc" tests/film; then
+                echo "::error file=$f::not included by tests/film (add: $inc)"
+                missing=1
+              fi
+            done
+          done
+          exit $missing
+
+      # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
+      - name: Strict GLSL check
+        run: shotglass check tests/film --web --no-gpu
+
+      # Mesa's software OpenGL: compiles every shader for real and renders frames.
+      - name: Render on Mesa
+        run: |
+          xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
+          xvfb-run -a shotglass strip tests/film --count 8 --size 320x180 --out strip.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-film-strip
+          path: strip.png

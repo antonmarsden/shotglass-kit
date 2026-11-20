@@ -1,0 +1,4 @@
+name = "shotglass-kit/core"
+version = "0.1.0"
+requires_shotglass = "0.1"
+licences = ["MIT", "Apache-2.0"]

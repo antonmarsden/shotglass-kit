@@ -1,0 +1,45 @@
+# The kit's test film: every library file is included, every transition used.
+# CI checks it strictly (GLSL 3.30 and GLSL ES 3.00) and renders it on Mesa.
+# The libraries come from this checkout (movie.local.toml), never the network.
+title = "shotglass-kit tests"
+shotglass = "0.1"
+aspect = [16, 9]
+
+[libraries]
+kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
+transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
+
+[[shot]]
+id = "core"
+scene = "scenes/core.glsl"
+duration = 2
+
+[[shot]]
+id = "crossfade"
+scene = "scenes/shapes.glsl"
+duration = 1.5
+transition = { type = "fx/crossfade.glsl", duration = 0.5 }
+
+[[shot]]
+id = "fade"
+scene = "scenes/core.glsl"
+duration = 1.5
+transition = { type = "fx/fade.glsl", duration = 0.6, params = { hold = 0.2, color = [1.0, 0.95, 0.85] } }
+
+[[shot]]
+id = "iris"
+scene = "scenes/shapes.glsl"
+duration = 1.5
+transition = { type = "fx/iris.glsl", duration = 0.6, params = { center = [0.3, 0.6] } }
+
+[[shot]]
+id = "dissolve"
+scene = "scenes/core.glsl"
+duration = 1.5
+transition = { type = "fx/dissolve.glsl", duration = 0.6, params = { scale = 6.0 } }
+
+[[shot]]
+id = "wipe"
+scene = "scenes/shapes.glsl"
+duration = 1.5
+transition = { type = "fx/wipe.glsl", duration = 0.6, params = { direction = [0.0, -1.0] } }
