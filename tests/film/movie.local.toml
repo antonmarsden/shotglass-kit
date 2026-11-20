@@ -1,0 +1,7 @@
+# Use the libraries in this checkout. (Films normally keep this file uncommitted;
+# for the kit's own test film it's the point.)
+[libraries.kit]
+path = "../../core"
+
+[libraries.transitions]
+path = "../../transitions"
