@@ -46,6 +46,46 @@ jobs:
           done
           exit $missing
 
+      # CONVENTIONS.md §6: calling it, not just including the file.
+      - name: Every public function is called by the test film
+        run: |
+          missing=0
+          for f in core/*.glsl; do
+            for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
+              if ! grep -rqE "\b$fn *\(" tests/film; then
+                echo "::error file=$f::$fn is never called by tests/film"
+                missing=1
+              fi
+            done
+          done
+          exit $missing
+
+      # CONVENTIONS.md §5: a file that says it's sound-safe is compiled as sound too.
+      - name: Every sound-safe file is included by the test film's music
+        run: |
+          missing=0
+          for f in $(grep -l '^// sound: yes' core/*.glsl); do
+            inc="#include <kit/$(basename "$f")>"
+            if ! grep -qF "$inc" tests/film/music.glsl; then
+              echo "::error file=$f::says sound: yes but tests/film/music.glsl doesn't include it (add: $inc)"
+              missing=1
+            fi
+          done
+          # glslang can't catch these: sound shaders are fragment shaders too.
+          for f in $(grep -l '^// sound: yes' core/*.glsl); do
+            if grep -nE '\bdFdx|\bdFdy|\bfwidth|\bgl_FragCoord|\bdiscard|\btexture *\(' "$f"; then
+              echo "::error file=$f::says sound: yes but uses derivatives, gl_FragCoord, discard or texture() (CONVENTIONS.md §5)"
+              missing=1
+            fi
+          done
+          for f in core/*.glsl; do
+            if ! grep -qE '^// sound: (yes|picture only)' "$f"; then
+              echo "::error file=$f::header doesn't say '// sound: yes' or '// sound: picture only'"
+              missing=1
+            fi
+          done
+          exit $missing
+
       # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
       - name: Strict GLSL check
         run: shotglass check tests/film --web --no-gpu

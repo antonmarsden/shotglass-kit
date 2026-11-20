@@ -4,6 +4,8 @@
 // inside. Build a scene by combining them with the kit_op_ functions, then draw it
 // in 2D (smoothstep on the distance) or raymarch it in 3D.
 // Shapes are centred on the origin: move them by passing p - position.
+// Lengths (radii, half-sizes, fillets) are in the units of p.
+// sound: yes
 
 // ---- 2D -------------------------------------------------------------------------
 
@@ -91,5 +93,6 @@ float kit_op_onion(float d, float t) { return abs(d) - t; }
 //   e.g. vec3 q = p;
 //        q.xz = kit_op_repeat(p.xz, vec2(4.0));          // a pillar every 4 units
 //        float pillars = kit_sd_cylinder(q, 0.3, 2.0);
-vec2 kit_op_repeat(vec2 p, vec2 s) { return p - s * round(p / s); }
-vec3 kit_op_repeat(vec3 p, vec3 s) { return p - s * round(p / s); }
+// (floor(x + 0.5), not round(): round() may go either way at .5, depending on the driver.)
+vec2 kit_op_repeat(vec2 p, vec2 s) { return p - s * floor(p / s + 0.5); }
+vec3 kit_op_repeat(vec3 p, vec3 s) { return p - s * floor(p / s + 0.5); }

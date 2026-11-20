@@ -1,5 +1,9 @@
 # Contributing
 
+Code in the kit follows [CONVENTIONS.md](CONVENTIONS.md): names, units, determinism,
+precision, picture vs sound, tests, versioning and doc comments. This file is the short
+version plus licensing and releases; where they differ, CONVENTIONS.md wins.
+
 ## Licensing
 
 Contributions are accepted under the project's licence: by opening a pull request you
@@ -25,8 +29,9 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in the test film** (`tests/film`): CI fails if a library file isn't included,
-  and only code that's included gets compiled and checked.
+- **Use it in the test film** (`tests/film`): CI fails if a library file isn't included
+  or a public function isn't called. A sound-safe file (`// sound: yes`) is also included
+  by the test film's `music.glsl`, so it's checked as a sound shader too.
 
 ## Adding a transition
 
@@ -40,4 +45,5 @@ old shot at `progress = 0` and exactly the new one at `progress = 1`.
 Each folder's `library.toml` carries the version; all folders share the repository's
 tags (`v0.1.0`). Bump the versions, then tag. Films only move to a new release with
 `shotglass update`, so a release never changes a finished film, but within a minor
-version (0.1.x), keep existing functions' output the same.
+version (0.1.x), keep existing functions' output the same. What counts as breaking is
+spelled out in [CONVENTIONS.md](CONVENTIONS.md#7-versioning).

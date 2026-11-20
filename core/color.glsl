@@ -3,6 +3,7 @@
 // Getting from "light" to pixels: tonemapping, sRGB, palettes and finishing touches.
 // shotglass writes your colour to the screen as is, like Shadertoy: if you light a
 // scene in linear units, finish with kit_aces and kit_srgb_encode.
+// sound: yes
 #include "noise.glsl"
 
 // kit_aces(c): squeeze any brightness into 0..1 with a filmic curve, so highlights
