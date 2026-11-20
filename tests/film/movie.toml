@@ -10,36 +10,36 @@ kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 
 [[shot]]
-id = "core"
-scene = "scenes/core.glsl"
-duration = 2
+id = "dusk"
+scene = "scenes/dusk.glsl"
+duration = 3
 
 [[shot]]
-id = "crossfade"
-scene = "scenes/shapes.glsl"
-duration = 1.5
-transition = { type = "fx/crossfade.glsl", duration = 0.5 }
+id = "house"
+scene = "scenes/house.glsl"
+duration = 3
+transition = { type = "fx/crossfade.glsl", duration = 0.6 }
 
 [[shot]]
-id = "fade"
-scene = "scenes/core.glsl"
-duration = 1.5
-transition = { type = "fx/fade.glsl", duration = 0.6, params = { hold = 0.2, color = [1.0, 0.95, 0.85] } }
+id = "toys"
+scene = "scenes/toys.glsl"
+duration = 3
+transition = { type = "fx/iris.glsl", duration = 0.8, params = { center = [0.3, 0.55] } }
 
 [[shot]]
-id = "iris"
-scene = "scenes/shapes.glsl"
-duration = 1.5
-transition = { type = "fx/iris.glsl", duration = 0.6, params = { center = [0.3, 0.6] } }
+id = "dusk-again"
+scene = "scenes/dusk.glsl"
+duration = 2.5
+transition = { type = "fx/dissolve.glsl", duration = 0.8, params = { scale = 6.0 } }
 
 [[shot]]
-id = "dissolve"
-scene = "scenes/core.glsl"
-duration = 1.5
-transition = { type = "fx/dissolve.glsl", duration = 0.6, params = { scale = 6.0 } }
-
-[[shot]]
-id = "wipe"
-scene = "scenes/shapes.glsl"
-duration = 1.5
+id = "house-again"
+scene = "scenes/house.glsl"
+duration = 2.5
 transition = { type = "fx/wipe.glsl", duration = 0.6, params = { direction = [0.0, -1.0] } }
+
+[[shot]]
+id = "toys-again"
+scene = "scenes/toys.glsl"
+duration = 2.5
+transition = { type = "fx/fade.glsl", duration = 0.8, params = { hold = 0.2, color = [1.0, 0.95, 0.85] } }
