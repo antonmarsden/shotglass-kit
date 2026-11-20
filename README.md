@@ -60,6 +60,9 @@ Every transition lists its parameters at the top of its file.
 
 ## What every part promises
 
+In short (the full rules, with units, precision, sound and versioning, are in
+[CONVENTIONS.md](CONVENTIONS.md)):
+
 - **A header contract on every public function:** what it does, parameters with units
   and ranges, cost, and an example. You (or an AI) shouldn't need to read the body.
 - **Names:** public functions start with `kit_`, internals with `kit__`. A library you
@@ -89,7 +92,8 @@ SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film
 ```
 
 CI runs the strict check, renders the film on Mesa, and fails if any library file
-isn't included by the test film. See [CONTRIBUTING.md](CONTRIBUTING.md).
+isn't included by the test film or a public function isn't called by it. New code
+follows [CONVENTIONS.md](CONVENTIONS.md); see also [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence and credit
 

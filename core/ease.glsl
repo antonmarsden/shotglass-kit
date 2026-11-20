@@ -2,6 +2,7 @@
 //
 // The same eases as movie.toml keyframes (`ease = "smooth"` etc.), so a shader can
 // shape its own motion exactly like an animated uniform would.
+// sound: yes
 // Every function clamps x to 0..1 and returns 0..1, with f(0) = 0 and f(1) = 1.
 //   cost: a few multiplies
 //   e.g.  float s = kit_ease_smooth(iShotProgress);

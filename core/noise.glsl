@@ -2,6 +2,7 @@
 //
 // Hashes and noise built on integer arithmetic, so they give the same bits on every
 // GPU and in browsers (sin()-based hashes don't). Same input, same output, always.
+// sound: yes
 
 // kit_hash_u(x): mixes the bits of x (lowbias32). Full 32-bit output.
 //   cost: 5 integer ops (uvec2: 2 rounds, uvec3: 3)
