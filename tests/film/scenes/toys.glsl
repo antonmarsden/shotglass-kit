@@ -6,7 +6,8 @@
 
 vec2 nearest(vec2 a, vec2 b) { return a.x < b.x ? a : b; }   // (distance, material)
 
-// Ball height: rises slowing down, falls speeding up.
+// Ball height: rises slowing down, falls speeding up. sfx/ball.glsl thuds on every landing
+// (fract(...) wrapping to 0), so keep the 0.8 bounces per second in step with it.
 float bounce() {
     float ph = fract(iTime * 0.8);
     return ph < 0.5 ? kit_ease_out(ph * 2.0) : 1.0 - kit_ease_in(ph * 2.0 - 1.0);

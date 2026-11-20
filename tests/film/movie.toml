@@ -27,6 +27,7 @@ transition = { type = "fx/crossfade.glsl", duration = 0.6 }
 [[shot]]
 id = "toys"
 scene = "scenes/toys.glsl"
+sound = "sfx/ball.glsl"
 duration = 3
 transition = { type = "fx/iris.glsl", duration = 0.8, params = { center = [0.3, 0.55] } }
 
@@ -45,5 +46,6 @@ transition = { type = "fx/wipe.glsl", duration = 0.6, params = { direction = [0.
 [[shot]]
 id = "toys-again"
 scene = "scenes/toys.glsl"
+sound = "sfx/ball.glsl"
 duration = 2.5
 transition = { type = "fx/fade.glsl", duration = 0.8, params = { hold = 0.2, color = [1.0, 0.95, 0.85] } }
