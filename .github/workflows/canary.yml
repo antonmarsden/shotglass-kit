@@ -7,9 +7,6 @@ on:
   schedule:
     - cron: "37 5 * * *"
   workflow_dispatch:
-  # TEMPORARY: proves the workflow on this branch. Remove before merging.
-  push:
-    branches: [claude/kit-canary]
 
 jobs:
   shotglass-main:
