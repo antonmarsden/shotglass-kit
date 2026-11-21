@@ -1,0 +1,21 @@
+# The instruments' test film: its music plays a short phrase on each instrument in
+# sound/instrument.glsl and sound/drum.glsl (pluck, bell, electric piano, pad, kick,
+# snare, hat), then all of them together. CI compares the soundtrack with
+# tests/golden/instruments.wav (8 kHz, rendered on Mesa). It's its own film so the
+# envelope/note/tempo reference (tests/sound) doesn't change when an instrument does.
+# The picture lights the instrument that's playing.
+# The libraries come from this checkout (movie.local.toml), never the network.
+title = "shotglass-kit instrument tests"
+shotglass = "0.1"
+aspect = [16, 9]
+
+[libraries]
+sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
+
+[sound]
+music = "music.glsl"
+
+[[shot]]
+id = "lights"
+scene = "scenes/lights.glsl"
+duration = 22
