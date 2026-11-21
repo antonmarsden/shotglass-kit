@@ -147,12 +147,12 @@ So:
 ## 6. Tests
 
 - **Every public function is called by a test film** (`tests/film`, or `tests/sound`
-  for the `sound/` library): a scene, a transition, or the music. Calling it, not just
+  and `tests/instruments` for the `sound/` library): a scene, a transition, or the music. Calling it, not just
   including the file, so a reviewer can see what it does in the strip (or hear it) and
   so the GPU compiles the code path that matters. CI fails if a file isn't included or
   a public function isn't called.
-- **Sound has a reference.** `tests/sound`'s soundtrack is compared with
-  `tests/golden/sound.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
+- **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,
+  `tests/instruments`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;
   one that changes them on purpose re-blesses the reference in the same commit.
 - **Everything passes `shotglass check tests/film --web --no-gpu`**: glslang at GLSL

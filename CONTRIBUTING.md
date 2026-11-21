@@ -29,14 +29,15 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`; `tests/sound` for the `sound/` library): CI
+- **Use it in a test film** (`tests/film`; `tests/sound` or `tests/instruments` for the `sound/` library): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too.
 - **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`.
   If a change is meant to alter what the test film looks like, re-bless it ("Golden
   picture" below), look at it, and commit it with the change.
-- **Sound changes:** CI compares `tests/sound`'s soundtrack with `tests/golden/sound.wav`.
+- **Sound changes:** CI compares the soundtracks of `tests/sound` and `tests/instruments` with
+  `tests/golden/sound.wav` and `tests/golden/instruments.wav`.
   If the sound is meant to change, re-bless the reference (README, "Audio references"),
   listen to it, and commit it with the change.
 
@@ -78,7 +79,9 @@ change:
 - **Locally:** run the command in the CI step with `--bless` added, e.g.
 
   ```sh
-  xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out film.png     --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3     --compare tests/golden/film.png --bless
+  xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out film.png \
+    --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3 \
+    --compare tests/golden/film.png --bless
   ```
 
   Bless on Linux with Mesa when you can (or in shotglass's Docker image, see its

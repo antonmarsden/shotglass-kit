@@ -121,6 +121,7 @@ jobs:
         run: |
           shotglass check tests/film --web --no-gpu
           shotglass check tests/sound --web --no-gpu
+          shotglass check tests/instruments --web --no-gpu
           shotglass check tests/transitions --web --no-gpu
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
@@ -128,6 +129,7 @@ jobs:
         run: |
           xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change
@@ -139,7 +141,8 @@ jobs:
       - name: Test film matches its golden picture
         run: |
           mkdir -p golden-out
-          xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out golden-out/film.png             --at "$FILM_FRAMES" --compare tests/golden/film.png
+          xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out golden-out/film.png \
+            --at "$FILM_FRAMES" --compare tests/golden/film.png
         env:
           FILM_FRAMES: dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3
 
@@ -157,6 +160,8 @@ jobs:
           mkdir -p golden-out
           xvfb-run -a shotglass wav tests/sound --rate 8000 --out golden-out/sound.wav \
             --compare tests/golden/sound.wav
+          xvfb-run -a shotglass wav tests/instruments --rate 8000 --out golden-out/instruments.wav \
+            --compare tests/golden/instruments.wav
       - if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
