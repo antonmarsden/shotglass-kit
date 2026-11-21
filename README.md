@@ -9,12 +9,12 @@ Each folder is a separate library that a film picks (and pins) on its own:
 
 | folder | canonical name | what's in it |
 |---|---|---|
-| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes |
+| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film |
 
-Planned (shotglass issue #4): raymarching and camera helpers in `core/`; instruments
-and mix effects in `sound/`.
+Planned (shotglass issue #4): camera helpers in `core/`; instruments and mix effects
+in `sound/`.
 
 ## Using it in a film
 
@@ -82,6 +82,34 @@ vec2 mainSound(int samp, float time) {
     return vec2(0.2 * v);
 }
 ```
+
+### Raymarching
+
+GLSL can't pass a function as a parameter, so `core/raymarch.glsl` calls one that your
+shader defines: `float kit_scene(vec3 p)`, the distance to your scene.
+
+```glsl
+#include <kit/sdf.glsl>
+#include <kit/raymarch.glsl>
+
+float kit_scene(vec3 p) {
+    return min(kit_sd_plane(p, vec3(0.0, 1.0, 0.0), 0.0), kit_sd_sphere(p - vec3(0.0, 1.0, 0.0), 1.0));
+}
+
+// in mainImage, with a camera ray ro, rd:
+float t = kit_raymarch(ro, rd, 128, 0.001, 20.0);    // -1.0 on a miss
+if (t >= 0.0) {
+    vec3 p = ro + rd * t;
+    vec3 n = kit_normal(p, 0.001);
+    float light = max(dot(n, sun), 0.0) * kit_soft_shadow(p + n * 0.002, sun, 0.01, 10.0, 8.0);
+    float ao = kit_ao(p, n, 0.3);
+}
+```
+
+`core/sdf_ops.glsl` adds operators for building scenes: `kit_op_union` on
+(distance, material) pairs, `kit_op_smin_blend` (a smooth union that says how to mix
+the two colours), `kit_op_ssubtract`, `kit_op_repeat_limited`, `kit_op_repeat_id`
+(which copy you're in, for `kit_hash`) and `kit_op_repeat_polar`.
 
 ## What every part promises
 
