@@ -29,12 +29,13 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library): CI
+- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /
   `sfx()`) by a test film's `mix.glsl`.
-- **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`.
+- **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`,
+  and of `tests/animation` with `tests/golden/animation.png`.
   If a change is meant to alter what the test film looks like, re-bless it ("Golden
   picture" below), look at it, and commit it with the change.
 - **Sound changes:** CI compares the soundtracks of `tests/sound`, `tests/instruments` and
@@ -67,6 +68,9 @@ pixels may differ and the average difference must stay under 0.25/255). Real GPU
 inside that; a one-line change to a core function's output doesn't. The frames (one of
 each scene, two transitions mid-way) are listed in the "Test film matches its golden
 picture" step of [`ci.yml`](.github/workflows/ci.yml); add one if you add a scene.
+`tests/animation` (core/animate.glsl) has its own reference, `tests/golden/animation.png`,
+checked the same way by the "Animation film matches its golden picture" step, so a change
+to an animation helper doesn't touch `film.png`; everything below applies to it too.
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
 and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures
@@ -75,8 +79,8 @@ the picture is meant to change, write a new reference, look at it, and commit it
 change:
 
 - **From CI (preferred, it's what CI compares against):** every run uploads its render
-  as the `test-film-strip` artifact. Download it from the run of your branch and commit
-  it as `tests/golden/film.png`.
+  as the `test-film-strip` artifact (`film.png` and `animation.png`). Download it from the
+  run of your branch and commit the one that changed under `tests/golden/`.
 - **Locally:** run the command in the CI step with `--bless` added, e.g.
 
   ```sh

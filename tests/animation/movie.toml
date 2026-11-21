@@ -1,0 +1,21 @@
+# The cartoon animation test film: core/animate.glsl. Two balls do the same jump, one
+# animated on ones (every film frame) and one on twos (12 drawings a second in this
+# 24 fps film): a wind-up crouch (anticipation), a stretched leap, three bounces that
+# squash on impact, and a settle. The panel on the right plots every ease and helper
+# in the file, with a dot riding each curve. CI checks it strictly (GLSL 3.30 and
+# GLSL ES 3.00), renders it on Mesa and compares eight frames with
+# tests/golden/animation.png. It's its own film so tests/film's golden picture doesn't
+# change when an animation helper does.
+# The libraries come from this checkout (movie.local.toml), never the network.
+title = "shotglass-kit animation tests"
+shotglass = "0.1"
+aspect = [16, 9]
+fps = 24
+
+[libraries]
+kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
+
+[[shot]]
+id = "bounce"
+scene = "scenes/bounce.glsl"
+duration = 4
