@@ -32,6 +32,12 @@ duration = 3
 transition = { type = "fx/iris.glsl", duration = 0.8, params = { center = [0.3, 0.55] } }
 
 [[shot]]
+id = "garden"
+scene = "scenes/garden.glsl"
+duration = 3
+transition = { type = "fx/crossfade.glsl", duration = 0.6 }
+
+[[shot]]
 id = "dusk-again"
 scene = "scenes/dusk.glsl"
 duration = 2.5

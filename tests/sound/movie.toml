@@ -1,0 +1,19 @@
+# The sound library's test film: its music calls every function in sound/, and CI
+# compares the soundtrack with tests/golden/sound.wav (8 kHz, rendered on Mesa).
+# It's its own film, so the reference only changes when the sound code does, not when
+# shots are added to tests/film. The picture is a pulse on the beat.
+# The libraries come from this checkout (movie.local.toml), never the network.
+title = "shotglass-kit sound tests"
+shotglass = "0.1"
+aspect = [16, 9]
+
+[libraries]
+sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
+
+[sound]
+music = "music.glsl"
+
+[[shot]]
+id = "pulse"
+scene = "scenes/pulse.glsl"
+duration = 11
