@@ -183,7 +183,8 @@ SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film
 
 CI runs the strict check, renders the films on Mesa, compares the audio references,
 and fails if any library file isn't included by a test film or a public function
-isn't called by one. New code
+isn't called by one. A daily canary runs the same checks against shotglass `main`
+([CONTRIBUTING.md](CONTRIBUTING.md#canary)). New code
 follows [CONVENTIONS.md](CONVENTIONS.md); see also [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence and credit

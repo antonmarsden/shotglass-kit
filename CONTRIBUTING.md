@@ -44,6 +44,28 @@ A transition defines `vec4 transition(vec2 uv)` using `getFromColor(uv)`,
 `#define`s with `#ifndef` defaults, documented at the top. It must show exactly the
 old shot at `progress = 0` and exactly the new one at `progress = 1`.
 
+## Canary
+
+CI builds shotglass at the commit pinned in `SHOTGLASS_REV`
+([`ci.yml`](.github/workflows/ci.yml)), so an engine change can't turn this repository
+red on its own; shotglass likewise tests against a pinned kit. The cost is that drift
+goes unnoticed until someone moves a pin. [`canary.yml`](.github/workflows/canary.yml)
+catches it early: every day (and on demand from the Actions tab) it runs the whole
+CI job, with the same checks, strict GLSL check, Mesa renders and audio references,
+against shotglass `main` instead. It never runs on pushes or pull requests, so
+it can't block a merge. The run's summary and log name the shotglass commit under test,
+and a failing audio reference is uploaded as an artifact.
+
+A red canary means one of two things:
+
+- **An engine change broke the kit's contract.** The kit is right; fix shotglass.
+- **The kit relies on something that changed on purpose.** Update the kit, bump
+  `SHOTGLASS_REV` to that shotglass commit (or later), and commit both.
+
+To reproduce, build that commit (`cargo install --locked --git
+https://github.com/antonmarsden/shotglass --rev <sha> shotglass`) and run the commands
+the failing step shows.
+
 ## Releasing
 
 Each folder's `library.toml` carries the version; all folders share the repository's

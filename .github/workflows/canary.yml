@@ -1,0 +1,15 @@
+name: Canary
+
+# Runs the regular CI job against shotglass `main` instead of the pinned SHOTGLASS_REV,
+# so engine drift shows up before someone moves the pin. Never runs on pushes or PRs,
+# so it can't block a merge. What a red run means: "Canary" in CONTRIBUTING.md.
+on:
+  schedule:
+    - cron: "37 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  shotglass-main:
+    uses: ./.github/workflows/ci.yml
+    with:
+      shotglass_ref: main
