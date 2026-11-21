@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "f681331ac8f993060aa0459c737ab8fef81fcafd"
+  SHOTGLASS_REV: "6f5c41f287a53e5ea290e64e2c069a2267c90962"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:

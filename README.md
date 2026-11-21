@@ -15,8 +15,11 @@ Each folder is a separate library that a film picks (and pins) on its own:
 
 ## Using it in a film
 
+In the film's project file, `shotglass.toml` (next to `movie.toml`, or in a folder above
+several films that share libraries):
+
 ```toml
-# movie.toml
+# shotglass.toml
 shotglass = "0.1"
 
 [libraries]
@@ -38,7 +41,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 ```
 
 `shotglass fetch` (or the first `play`) downloads the kit and pins it in
-`shotglass.lock`; commit that file with the film. The names on the left of
+`shotglass.lock` next to `shotglass.toml`; commit that file. The names on the left of
 `[libraries]` are yours to choose: they're the prefix in `#include <kit/…>`.
 
 ### Transitions
@@ -187,8 +190,9 @@ uses every transition; [`tests/sound`](tests/sound) and
 [`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
-bar. Their `movie.local.toml` points at this
-checkout, so they never download anything:
+bar. They use the libraries in this checkout, declared once in the
+[`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
+never download anything:
 
 ```sh
 shotglass check tests/film --web --no-gpu   # strict GLSL: 3.30 core and ES 3.00
@@ -217,7 +221,7 @@ meant to change (new or changed code in `sound/` or in the test music), add
 `--bless` to write the new reference, listen to it, and commit it with the change.
 Bless on Linux with Mesa (`xvfb-run -a` with llvmpipe), like CI, when you can.
 
-To try a working copy in your own film without changing its `movie.toml`:
+To try a working copy in your own film without changing its `shotglass.toml`:
 
 ```sh
 SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film

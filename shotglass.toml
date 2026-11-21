@@ -1,0 +1,10 @@
+# The project file for the kit's own test films (tests/*): they use the libraries in
+# this checkout, so they never download anything. Films that use the kit declare it
+# with a source instead (README, "Using it in a film"); this file never reaches them,
+# because a library is only its own folder (core/, sound/, transitions/).
+shotglass = "0.1"
+
+[libraries]
+kit = { path = "core", version = "0.1" }
+sound = { path = "sound", version = "0.1" }
+transitions = { path = "transitions", version = "0.1" }

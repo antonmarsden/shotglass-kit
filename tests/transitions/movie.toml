@@ -8,11 +8,7 @@
 # +1 s to +2 s, and the next transition takes its last second. Add a variant by
 # appending a shot with the other scene; the CI step finds the shots by id (t1, t2...).
 title = "shotglass-kit transition endpoints"
-shotglass = "0.1"
 aspect = [16, 9]
-
-[libraries]
-transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 
 [[shot]]
 id = "t0"
