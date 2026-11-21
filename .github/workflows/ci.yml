@@ -122,32 +122,57 @@ jobs:
           shotglass check tests/film --web --no-gpu
           shotglass check tests/sound --web --no-gpu
           shotglass check tests/instruments --web --no-gpu
+          shotglass check tests/transitions --web --no-gpu
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
       - name: Render on Mesa
         run: |
           xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
-          xvfb-run -a shotglass strip tests/film --count 8 --size 320x180 --out strip.png
           xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
+
+      # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
+      # tests): one frame of each test-film scene and two transitions mid-way, so a change
+      # in the output of any core/ function shows up. noise, colour and the sun's SDF (dusk,
+      # late, stars out); 2D SDFs and operators (house, windows lit); 3D SDFs, raymarching
+      # (toys, garden: soft shadows, AO, sdf_ops); camera.glsl (orbit with depth of field,
+      # dolly zoom); iris and wipe half-way. Within `strip --compare`'s default tolerance,
+      # so real GPUs pass too. To update it on purpose: "Golden picture" in CONTRIBUTING.md.
+      - name: Test film matches its golden picture
+        run: |
+          mkdir -p golden-out
+          xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out golden-out/film.png \
+            --at "$FILM_FRAMES" --compare tests/golden/film.png
+        env:
+          FILM_FRAMES: dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3
+
+      # Every kit transition, with and without parameters, starts exactly on the old shot
+      # and ends exactly on the new one (zero tolerance). The engine's own selftest checks
+      # this with fixture transitions; this checks the kit's. See the script's header.
+      - name: Transition endpoints
+        run: xvfb-run -a .github/transition-endpoints.sh golden-out/transitions
 
       # Golden soundtracks (tests/golden/<film>.wav, 8 kHz like the engine's golden tests),
       # rendered on Mesa. Within `wav --compare`'s default tolerance, so real GPUs pass too.
       # To update one on purpose, see "Audio references" in README.md.
       - name: Soundtracks match their references
         run: |
-          mkdir -p golden-failures
-          xvfb-run -a shotglass wav tests/sound --rate 8000 --out golden-failures/sound.wav \
+          mkdir -p golden-out
+          xvfb-run -a shotglass wav tests/sound --rate 8000 --out golden-out/sound.wav \
             --compare tests/golden/sound.wav
-          xvfb-run -a shotglass wav tests/instruments --rate 8000 --out golden-failures/instruments.wav \
+          xvfb-run -a shotglass wav tests/instruments --rate 8000 --out golden-out/instruments.wav \
             --compare tests/golden/instruments.wav
-      - uses: actions/upload-artifact@v4
+      - if: success() || failure()
+        uses: actions/upload-artifact@v4
         with:
           name: test-film-strip
-          path: strip.png
+          path: golden-out/film.png
+          if-no-files-found: ignore
+      # The actual renders next to their diffs: <name>.diff.png (magenta = differs),
+      # <name>.diff.wav, and transitions/ (expected.png, endpoints.png, endpoints.diff.png).
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: golden-sound-failures
-          path: golden-failures/
+          name: golden-failures
+          path: golden-out/
           if-no-files-found: ignore

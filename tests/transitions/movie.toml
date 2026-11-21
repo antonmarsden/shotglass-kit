@@ -1,0 +1,104 @@
+# Transition endpoints: every kit transition, with and without parameters, between two
+# still gradients (scenes/a.glsl -> scenes/b.glsl). CI renders the first instant of each
+# transition and the last instant before its cut, and requires them to be exactly the
+# old and the new shot (see "Transition endpoints" in .github/workflows/ci.yml).
+#
+# Layout the CI step relies on: every shot is 3 s and every transition 1 s, so shot n
+# starts at 2n s, its transition runs over its first second, it's alone on screen from
+# +1 s to +2 s, and the next transition takes its last second. Add a variant by
+# appending a shot with the other scene; the CI step finds the shots by id (t1, t2...).
+title = "shotglass-kit transition endpoints"
+shotglass = "0.1"
+aspect = [16, 9]
+
+[libraries]
+transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
+
+[[shot]]
+id = "t0"
+scene = "scenes/a.glsl"
+duration = 3
+
+[[shot]]
+id = "t1"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/crossfade", duration = 1 }
+
+[[shot]]
+id = "t2"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/crossfade", duration = 1, ease = "inout" }
+
+[[shot]]
+id = "t3"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/crossfade", duration = 1, freeze = true }
+
+[[shot]]
+id = "t4"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/fade", duration = 1 }
+
+[[shot]]
+id = "t5"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/fade", duration = 1, params = { hold = 0.3, color = [0.2, 0.4, 0.6] } }
+
+[[shot]]
+id = "t6"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/iris", duration = 1 }
+
+[[shot]]
+id = "t7"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/iris", duration = 1, params = { center = [0.3, 0.55], softness = 0.02 } }
+
+[[shot]]
+id = "t8"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/iris", duration = 1, params = { closing = 1.0 } }
+
+[[shot]]
+id = "t9"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/iris", duration = 1, params = { closing = 1.0, center = [0.3, 0.6] } }
+
+[[shot]]
+id = "t10"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/dissolve", duration = 1 }
+
+[[shot]]
+id = "t11"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/dissolve", duration = 1, params = { scale = 6.0, softness = 0.2 } }
+
+[[shot]]
+id = "t12"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/wipe", duration = 1 }
+
+[[shot]]
+id = "t13"
+scene = "scenes/b.glsl"
+duration = 3
+transition = { type = "transitions/wipe", duration = 1, params = { direction = [-0.4, 1.0] } }
+
+[[shot]]
+id = "t14"
+scene = "scenes/a.glsl"
+duration = 3
+transition = { type = "transitions/wipe", duration = 1, params = { direction = [0.0, -1.0], softness = 0.05 } }

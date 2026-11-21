@@ -201,8 +201,9 @@ To try a working copy in your own film without changing its `movie.toml`:
 SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film
 ```
 
-CI runs the strict check, renders the films on Mesa, compares the audio references,
-and fails if any library file isn't included by a test film or a public function
+CI runs the strict check, renders the films on Mesa, compares the test film with its
+golden picture and the audio references, checks that every transition starts exactly on
+the old shot and ends exactly on the new one, and fails if any library file isn't included by a test film or a public function
 isn't called by one. A daily canary runs the same checks against shotglass `main`
 ([CONTRIBUTING.md](CONTRIBUTING.md#canary)). New code
 follows [CONVENTIONS.md](CONVENTIONS.md); see also [CONTRIBUTING.md](CONTRIBUTING.md).
