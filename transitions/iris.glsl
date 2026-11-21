@@ -22,12 +22,14 @@ vec4 transition(vec2 uv) {
     float far = max(max(length(c), length(c - vec2(a.x, 0.0))),
                     max(length(c - vec2(0.0, 1.0)), length(c - a)));
     float d = length(uv * a - c);
+    // The blurred edge starts and ends a softness beyond the centre and the corner, so
+    // the first frame is exactly the old shot and the last exactly the new one.
     if (closing > 0.5) {
-        float r = (1.0 - progress) * far;
+        float r = mix(far + softness, -softness, progress);
         float inside = 1.0 - smoothstep(r - softness, r + softness, d);
         return mix(getToColor(uv), getFromColor(uv), inside);
     }
-    float r = progress * far;
+    float r = mix(-softness, far + softness, progress);
     float inside = 1.0 - smoothstep(r - softness, r + softness, d);
     return mix(getFromColor(uv), getToColor(uv), inside);
 }
