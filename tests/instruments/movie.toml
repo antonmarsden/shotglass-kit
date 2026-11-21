@@ -4,13 +4,10 @@
 # tests/golden/instruments.wav (8 kHz, rendered on Mesa). It's its own film so the
 # envelope/note/tempo reference (tests/sound) doesn't change when an instrument does.
 # The picture lights the instrument that's playing.
-# The libraries come from this checkout (movie.local.toml), never the network.
+# The libraries come from this checkout (shotglass.toml at the kit's root), never
+# the network.
 title = "shotglass-kit instrument tests"
-shotglass = "0.1"
 aspect = [16, 9]
-
-[libraries]
-sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 
 [sound]
 music = "music.glsl"

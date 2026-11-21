@@ -6,13 +6,10 @@
 # tests/golden/mix.wav (8 kHz, rendered on Mesa). It's its own film so the other
 # sound references don't change when an effect does.
 # The picture lights the effect that's on.
-# The libraries come from this checkout (movie.local.toml), never the network.
+# The libraries come from this checkout (shotglass.toml at the kit's root), never
+# the network.
 title = "shotglass-kit mix tests"
-shotglass = "0.1"
 aspect = [16, 9]
-
-[libraries]
-sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 
 [sound]
 music = "music.glsl"

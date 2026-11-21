@@ -1,14 +1,10 @@
 # The kit's test film: every library file is included, every public function called,
 # every transition used, and every sound-safe file also included by the music.
 # CI checks it strictly (GLSL 3.30 and GLSL ES 3.00) and renders it on Mesa.
-# The libraries come from this checkout (movie.local.toml), never the network.
+# The libraries come from this checkout (shotglass.toml at the kit's root), never
+# the network.
 title = "shotglass-kit tests"
-shotglass = "0.1"
 aspect = [16, 9]
-
-[libraries]
-kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
-transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 
 [sound]
 music = "music.glsl"

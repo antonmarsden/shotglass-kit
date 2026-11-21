@@ -1,4 +1,0 @@
-# Use the transitions in this checkout. (Films normally keep this file uncommitted;
-# for the kit's own test films it's the point.)
-[libraries.transitions]
-path = "../../transitions"
