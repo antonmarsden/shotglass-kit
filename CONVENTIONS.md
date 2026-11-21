@@ -137,7 +137,7 @@ So:
 - **Each file says in its header whether it's sound-safe.** A sound-safe file uses no
   derivatives, no implicit-LOD `texture()`, no `gl_FragCoord`, no `discard`, and only
   includes other sound-safe files. Write `// sound: yes` or `// sound: picture only`
-  in the file header. The test film's music includes every sound-safe file, so
+  in the file header. A test film's music includes every sound-safe file, so
   glslang rejects a picture uniform in one; derivatives would still compile there
   (sound shaders are fragment shaders too), so CI also greps sound-safe files for
   `dFdx`, `dFdy`, `fwidth`, `gl_FragCoord`, `discard` and `texture(`.
@@ -146,10 +146,15 @@ So:
 
 ## 6. Tests
 
-- **Every public function is called by the test film** (`tests/film`): a scene, a
-  transition, or the music. Calling it, not just including the file, so a reviewer can
-  see what it does in the strip and so the GPU compiles the code path that matters.
-  CI fails if a file isn't included or a public function isn't called.
+- **Every public function is called by a test film** (`tests/film`, or `tests/sound`
+  for the `sound/` library): a scene, a transition, or the music. Calling it, not just
+  including the file, so a reviewer can see what it does in the strip (or hear it) and
+  so the GPU compiles the code path that matters. CI fails if a file isn't included or
+  a public function isn't called.
+- **Sound has a reference.** `tests/sound`'s soundtrack is compared with
+  `tests/golden/sound.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
+  default tolerance. A change that should keep the samples the same must keep passing;
+  one that changes them on purpose re-blesses the reference in the same commit.
 - **Everything passes `shotglass check tests/film --web --no-gpu`**: glslang at GLSL
   3.30 core and as GLSL ES 3.00. Your own GPU accepting the code proves nothing
   (NVIDIA accepts code other drivers reject).

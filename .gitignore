@@ -2,3 +2,5 @@
 /tests/film/stills/
 *.png
 *.wav
+# ...except the audio references CI compares against
+!/tests/golden/*.wav
