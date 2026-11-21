@@ -89,7 +89,7 @@ jobs:
           exit $missing
 
       # CONVENTIONS.md §5: a file that says it's sound-safe is compiled as sound too.
-      - name: Every sound-safe file is included by a test film's music (mix-only: its mix)
+      - name: Every sound-safe file is included by a test film's music, every mix-only file by its mix
         run: |
           missing=0
           for entry in $LIBS; do
