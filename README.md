@@ -9,12 +9,11 @@ Each folder is a separate library that a film picks (and pins) on its own:
 
 | folder | canonical name | what's in it |
 |---|---|---|
-| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion) |
+| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film |
 
-Planned (shotglass issue #4): camera helpers in `core/`; instruments and mix effects
-in `sound/`.
+Planned (shotglass issue #4): instruments and mix effects in `sound/`.
 
 ## Using it in a film
 
@@ -110,6 +109,27 @@ if (t >= 0.0) {
 (distance, material) pairs, `kit_op_smin_blend` (a smooth union that says how to mix
 the two colours), `kit_op_ssubtract`, `kit_op_repeat_limited`, `kit_op_repeat_id`
 (which copy you're in, for `kit_hash`) and `kit_op_repeat_polar`.
+
+### Camera
+
+`core/camera.glsl` gives the `ro, rd` above, placed by numbers `movie.toml` can keyframe:
+
+```toml
+uniforms.uOrbit = { keys = [[0, [0.0, 0.3]], [6, [1.2, 0.5]]], ease = "inout" }   # yaw, pitch
+uniforms.uDist  = { keys = [[0, 6.0], [6, 3.5]] }
+```
+
+```glsl
+#include <kit/camera.glsl>
+
+vec3 ta = vec3(0.0, 1.0, 0.0);
+vec3 ro = kit_cam_orbit(ta, uOrbit, uDist);              // or kit_cam_dolly(ro, ta, d)
+mat3 cam = kit_cam_look_at(ro, ta, 0.0);                 // last argument: roll
+vec3 rd = kit_cam_ray(cam, fragCoord, iResolution.xy, 0.8);   // vertical fov, radians
+```
+
+`kit_cam_dolly_zoom` gives the field of view for a "vertigo" shot, and `kit_cam_dof`
+jitters a ray across the lens for depth of field (average a few rays per pixel).
 
 ## What every part promises
 

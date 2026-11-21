@@ -7,6 +7,7 @@
 #include <kit/color.glsl>
 #include <kit/sdf.glsl>
 #include <kit/sdf_ops.glsl>
+#include <kit/camera.glsl>
 
 // A sine at a whole-hertz frequency. The phase comes from the sample index with
 // integer arithmetic, so it stays exact however long the film is.
