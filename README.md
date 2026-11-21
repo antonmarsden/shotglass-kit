@@ -11,9 +11,9 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film |
+| [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat) |
 
-Planned (shotglass issue #4): instruments and mix effects in `sound/`.
+Planned (shotglass issue #4): mix effects in `sound/`.
 
 ## Using it in a film
 
@@ -80,6 +80,22 @@ vec2 mainSound(int samp, float time) {
     float v = sin(6.28318531 * fract(hz * since)) * kit_env_ar(since, 0.003, 0.12);
     return vec2(0.2 * v);
 }
+```
+
+`sound/instrument.glsl` and `sound/drum.glsl` are ready-made voices, each one function
+of the time since the note began, its frequency and a few parameters, returning a
+level around +-1. A note fades in from 0 and ends in silence at a time its header
+gives, so keep calling it after the next note starts and it never clicks:
+
+```glsl
+#include <sound/instrument.glsl>   // kit_inst_pluck, kit_inst_bell, kit_inst_epiano, kit_inst_pad
+#include <sound/drum.glsl>         // kit_drum_kick, kit_drum_snare, kit_drum_hat
+
+// inside mainSound, with step and since from kit_beat_step / kit_beat_since (eighths)
+float v = kit_inst_pluck(since, hz, 1.0, 0.6)
+        + kit_inst_pluck(since + 0.25, prev_hz, 1.0, 0.6)   // the previous note's tail
+        + kit_drum_kick(since, 50.0, 0.4) * float(step % 4 == 0)
+        + kit_drum_hat(since, 2000.0, 0.06);
 ```
 
 ### Raymarching
@@ -149,8 +165,10 @@ In short (the full rules, with units, precision, sound and versioning, are in
 ## Working on the kit
 
 The test film in [`tests/film`](tests/film) includes every picture and core file and
-uses every transition; [`tests/sound`](tests/sound) is the sound library's, with music
-that calls every function in `sound/`. Their `movie.local.toml` points at this
+uses every transition; [`tests/sound`](tests/sound) and
+[`tests/instruments`](tests/instruments) are the sound library's: the first's music
+calls every envelope, note and tempo function, the second plays a phrase on each
+instrument and drum. Their `movie.local.toml` points at this
 checkout, so they never download anything:
 
 ```sh
@@ -158,16 +176,18 @@ shotglass check tests/film --web --no-gpu   # strict GLSL: 3.30 core and ES 3.00
 shotglass check tests/film                  # compile on your GPU, render, time
 shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
+shotglass play tests/instruments            # and to its instruments
 ```
 
 ### Audio references
 
-CI renders `tests/sound`'s soundtrack on Mesa at 8 kHz and compares it with
-[`tests/golden/sound.wav`](tests/golden), failing when any 50 ms window differs by more
+CI renders the soundtracks of `tests/sound` and `tests/instruments` on Mesa at 8 kHz
+and compares them with [`tests/golden/sound.wav` and `instruments.wav`](tests/golden), failing when any 50 ms window differs by more
 than `shotglass wav --compare`'s default tolerance (which real GPUs stay inside):
 
 ```sh
 xvfb-run -a shotglass wav tests/sound --rate 8000 --out sound.wav --compare tests/golden/sound.wav
+xvfb-run -a shotglass wav tests/instruments --rate 8000 --out instruments.wav --compare tests/golden/instruments.wav
 ```
 
 A change that should keep the sound the same must keep passing. If the sound is

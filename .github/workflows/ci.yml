@@ -121,6 +121,7 @@ jobs:
         run: |
           shotglass check tests/film --web --no-gpu
           shotglass check tests/sound --web --no-gpu
+          shotglass check tests/instruments --web --no-gpu
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
       - name: Render on Mesa
@@ -128,6 +129,7 @@ jobs:
           xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
           xvfb-run -a shotglass strip tests/film --count 8 --size 320x180 --out strip.png
           xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
 
       # Golden soundtracks (tests/golden/<film>.wav, 8 kHz like the engine's golden tests),
       # rendered on Mesa. Within `wav --compare`'s default tolerance, so real GPUs pass too.
@@ -137,6 +139,8 @@ jobs:
           mkdir -p golden-failures
           xvfb-run -a shotglass wav tests/sound --rate 8000 --out golden-failures/sound.wav \
             --compare tests/golden/sound.wav
+          xvfb-run -a shotglass wav tests/instruments --rate 8000 --out golden-failures/instruments.wav \
+            --compare tests/golden/instruments.wav
       - uses: actions/upload-artifact@v4
         with:
           name: test-film-strip

@@ -29,11 +29,12 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`; `tests/sound` for the `sound/` library): CI
+- **Use it in a test film** (`tests/film`; `tests/sound` or `tests/instruments` for the `sound/` library): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too.
-- **Sound changes:** CI compares `tests/sound`'s soundtrack with `tests/golden/sound.wav`.
+- **Sound changes:** CI compares the soundtracks of `tests/sound` and `tests/instruments` with
+  `tests/golden/sound.wav` and `tests/golden/instruments.wav`.
   If the sound is meant to change, re-bless the reference (README, "Audio references"),
   listen to it, and commit it with the change.
 
