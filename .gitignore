@@ -2,5 +2,8 @@
 /tests/film/stills/
 *.png
 *.wav
-# ...except the audio references CI compares against
+# ...except the references CI compares against
 !/tests/golden/*.wav
+!/tests/golden/*.png
+/golden-out/
+/transition-endpoints/

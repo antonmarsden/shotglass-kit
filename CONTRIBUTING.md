@@ -33,6 +33,9 @@ public domain, CC0) is fine if you name its source and licence in the file.
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too.
+- **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`.
+  If a change is meant to alter what the test film looks like, re-bless it ("Golden
+  picture" below), look at it, and commit it with the change.
 - **Sound changes:** CI compares `tests/sound`'s soundtrack with `tests/golden/sound.wav`.
   If the sound is meant to change, re-bless the reference (README, "Audio references"),
   listen to it, and commit it with the change.
@@ -44,6 +47,47 @@ A transition defines `vec4 transition(vec2 uv)` using `getFromColor(uv)`,
 `#define`s with `#ifndef` defaults, documented at the top. It must show exactly the
 old shot at `progress = 0` and exactly the new one at `progress = 1`.
 
+CI checks this for every transition in `tests/transitions/movie.toml`, with zero
+tolerance ([`.github/transition-endpoints.sh`](.github/transition-endpoints.sh)): the
+first instant of each transition must equal the old shot pixel for pixel, and the last
+instant before the cut the new one. Add a shot there for a new transition, and one per
+parameter that changes how it starts or ends (`closing` for the iris, say). Run it
+locally with `xvfb-run -a .github/transition-endpoints.sh` (plain on Windows/macOS, in
+Git Bash there); on a failure, `transition-endpoints/endpoints.diff.png` marks the wrong
+pixels in magenta, one row per transition, start on the left, end on the right.
+
+## Golden picture
+
+CI renders eight frames of `tests/film` on Mesa (llvmpipe) and compares them with
+[`tests/golden/film.png`](tests/golden) using `shotglass strip --compare` and its default
+tolerance (a pixel differs when a channel is off by more than 8/255; at most 0.1% of
+pixels may differ and the average difference must stay under 0.25/255). Real GPUs stay
+inside that; a one-line change to a core function's output doesn't. The frames (one of
+each scene, two transitions mid-way) are listed in the "Test film matches its golden
+picture" step of [`ci.yml`](.github/workflows/ci.yml); add one if you add a scene.
+
+On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
+and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures
+the same must keep passing: never re-bless to make an unexplained difference go away. If
+the picture is meant to change, write a new reference, look at it, and commit it with the
+change:
+
+- **From CI (preferred, it's what CI compares against):** every run uploads its render
+  as the `test-film-strip` artifact. Download it from the run of your branch and commit
+  it as `tests/golden/film.png`.
+- **Locally:** run the command in the CI step with `--bless` added, e.g.
+
+  ```sh
+  xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out film.png     --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3     --compare tests/golden/film.png --bless
+  ```
+
+  Bless on Linux with Mesa when you can (or in shotglass's Docker image, see its
+  CONTRIBUTING.md); a reference blessed on a real GPU usually passes too, but check that
+  CI agrees before merging.
+
+Moving `SHOTGLASS_REV` can change the pictures too (the engine draws the frames); re-bless
+in the same commit if it does, and say why.
+
 ## Canary
 
 CI builds shotglass at the commit pinned in `SHOTGLASS_REV`
@@ -51,10 +95,10 @@ CI builds shotglass at the commit pinned in `SHOTGLASS_REV`
 red on its own; shotglass likewise tests against a pinned kit. The cost is that drift
 goes unnoticed until someone moves a pin. [`canary.yml`](.github/workflows/canary.yml)
 catches it early: every day (and on demand from the Actions tab) it runs the whole
-CI job, with the same checks, strict GLSL check, Mesa renders and audio references,
-against shotglass `main` instead. It never runs on pushes or pull requests, so
+CI job, with the same checks, strict GLSL check, Mesa renders, golden picture,
+transition endpoints and audio references, against shotglass `main` instead. It never runs on pushes or pull requests, so
 it can't block a merge. The run's summary and log name the shotglass commit under test,
-and a failing audio reference is uploaded as an artifact.
+and failing renders are uploaded as the `golden-failures` artifact.
 
 A red canary means one of two things:
 
