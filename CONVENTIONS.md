@@ -157,7 +157,7 @@ So:
 
 ## 6. Tests
 
-- **Every public function is called by a test film** (`tests/film`, or `tests/sound`
+- **Every public function is called by a test film** (`tests/film` or `tests/animation`, or `tests/sound`
   `tests/instruments` and `tests/mix` for the `sound/` library): a scene, a transition,
   the music or the mix. Calling it, not just
   including the file, so a reviewer can see what it does in the strip (or hear it) and
