@@ -9,10 +9,10 @@ Each folder is a separate library that a film picks (and pins) on its own:
 
 | folder | canonical name | what's in it |
 |---|---|---|
-| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes |
+| [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes, a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
 
-Planned (shotglass issue #4): raymarching and camera helpers in `core/`, and sound:
+Planned (shotglass issue #4): raymarching helpers in `core/`, and sound:
 envelopes, notes and scales, instruments, and mix effects.
 
 ## Using it in a film

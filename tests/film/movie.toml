@@ -49,3 +49,30 @@ scene = "scenes/toys.glsl"
 sound = "sfx/ball.glsl"
 duration = 2.5
 transition = { type = "fx/fade.glsl", duration = 0.8, params = { hold = 0.2, color = [1.0, 0.95, 0.85] } }
+
+# core/camera.glsl: the same scene twice, the camera moved only by keyframed uniforms.
+# An orbit that dollies in, rolls a little and opens the lens (depth of field)...
+[[shot]]
+id = "camera-orbit"
+scene = "scenes/camera.glsl"
+duration = 3
+transition = { type = "fx/crossfade.glsl", duration = 0.6 }
+uniforms.uOrbit = { keys = [[0, [-0.6, 0.55]], [3, [1.0, 0.2]]], ease = "inout" }
+uniforms.uDist = 6.0
+uniforms.uDolly = { keys = [[0, 0.0], [3, 2.5]] }
+uniforms.uRoll = { keys = [[0, 0.0], [3, 0.12]] }
+uniforms.uVertigo = 0.0
+uniforms.uAperture = { keys = [[0, 0.0], [1, 0.0], [3, 0.12]] }
+
+# ...then a dolly zoom: the camera pulls in while the lens widens, so the ball keeps its
+# size and the pillars and the grid behind it stretch away.
+[[shot]]
+id = "camera-vertigo"
+scene = "scenes/camera.glsl"
+duration = 3
+uniforms.uOrbit = [0.4, 0.15]
+uniforms.uDist = 9.0
+uniforms.uDolly = { keys = [[0, 0.0], [3, 7.0]], ease = "smoother" }
+uniforms.uRoll = 0.0
+uniforms.uVertigo = 1.0
+uniforms.uAperture = 0.0
