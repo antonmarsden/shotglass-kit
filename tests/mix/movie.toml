@@ -1,0 +1,26 @@
+# The mix effects' test film: sound/mix.glsl and sound/master.glsl in a `mainMix`.
+# One bar (2 s at 120 bpm) for each effect: dry, ping-pong delay, small room, a hall
+# on the drums (ducked under them), stereo width, sidechain ducking, then the limiter
+# and soft clip on a loud bar, and a last note whose echoes and reverb ring out into
+# silence (no feedback, so nothing runs away). CI compares the soundtrack with
+# tests/golden/mix.wav (8 kHz, rendered on Mesa). It's its own film so the other
+# sound references don't change when an effect does.
+# The picture lights the effect that's on.
+# The libraries come from this checkout (movie.local.toml), never the network.
+title = "shotglass-kit mix tests"
+shotglass = "0.1"
+aspect = [16, 9]
+
+[libraries]
+sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
+
+[sound]
+music = "music.glsl"
+mix = "mix.glsl"
+mix_lookback = 1.5   # the delay in mix.glsl reads 1.125 s back; the default (1.0) is too short
+
+[[shot]]
+id = "effects"
+scene = "scenes/effects.glsl"
+sound = "sfx/drums.glsl"
+duration = 18

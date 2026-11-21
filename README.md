@@ -11,9 +11,7 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat) |
-
-Planned (shotglass issue #4): mix effects in `sound/`.
+| [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
 
@@ -98,6 +96,26 @@ float v = kit_inst_pluck(since, hz, 1.0, 0.6)
         + kit_drum_hat(since, 2000.0, 0.06);
 ```
 
+`sound/mix.glsl` is for the film's mix (`[sound] mix`): effects that read the music and
+shot-sound buses at other samples. They have no feedback, so every sample is computed
+on its own and nothing can run away; keep every delay, reverb size and release under the
+film's `mix_lookback` (default 1 s; reads further back return silence). It includes
+`sound/master.glsl` (width, ducking gain, soft clip), which works in any sound shader.
+
+```glsl
+#include <sound/mix.glsl>
+
+vec2 mainMix(int samp, float time) {
+    int rate = int(iSampleRate);
+    vec2 m = music(samp) * kit_mix_duck(samp, rate, 0.12, 0.35, 0.7);    // dips under the effects
+    m += 0.35 * kit_mix_delay(kit_bus_music, samp, rate, 0.31, 2, 0.5, 1.0);   // ping-pong echo
+    vec2 fx = sfx(samp) + 0.3 * kit_mix_reverb(kit_bus_sfx, samp, rate, 0.13, 0.1);   // a room
+    vec2 o = kit_width(m, 1.3) + fx;
+    o *= kit_mix_limit(kit_bus_all, samp, rate, 1.0, 0.85);              // look-ahead limiter
+    return kit_soft_clip(o, 0.9);
+}
+```
+
 ### Raymarching
 
 GLSL can't pass a function as a parameter, so `core/raymarch.glsl` calls one that your
@@ -166,9 +184,10 @@ In short (the full rules, with units, precision, sound and versioning, are in
 
 The test film in [`tests/film`](tests/film) includes every picture and core file and
 uses every transition; [`tests/sound`](tests/sound) and
-[`tests/instruments`](tests/instruments) are the sound library's: the first's music
-calls every envelope, note and tempo function, the second plays a phrase on each
-instrument and drum. Their `movie.local.toml` points at this
+[`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
+library's: the first's music calls every envelope, note and tempo function, the second
+plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
+bar. Their `movie.local.toml` points at this
 checkout, so they never download anything:
 
 ```sh
@@ -177,17 +196,20 @@ shotglass check tests/film                  # compile on your GPU, render, time
 shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
+shotglass play tests/mix                    # and its mix effects
 ```
 
 ### Audio references
 
-CI renders the soundtracks of `tests/sound` and `tests/instruments` on Mesa at 8 kHz
-and compares them with [`tests/golden/sound.wav` and `instruments.wav`](tests/golden), failing when any 50 ms window differs by more
+CI renders the soundtracks of `tests/sound`, `tests/instruments` and `tests/mix` on Mesa
+at 8 kHz and compares them with [`tests/golden/sound.wav`, `instruments.wav` and
+`mix.wav`](tests/golden), failing when any 50 ms window differs by more
 than `shotglass wav --compare`'s default tolerance (which real GPUs stay inside):
 
 ```sh
 xvfb-run -a shotglass wav tests/sound --rate 8000 --out sound.wav --compare tests/golden/sound.wav
 xvfb-run -a shotglass wav tests/instruments --rate 8000 --out instruments.wav --compare tests/golden/instruments.wav
+xvfb-run -a shotglass wav tests/mix --rate 8000 --out mix.wav --compare tests/golden/mix.wav
 ```
 
 A change that should keep the sound the same must keep passing. If the sound is
