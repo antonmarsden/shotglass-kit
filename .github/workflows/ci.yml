@@ -89,7 +89,7 @@ jobs:
           exit $missing
 
       # CONVENTIONS.md §5: a file that says it's sound-safe is compiled as sound too.
-      - name: Every sound-safe file is included by a test film's music
+      - name: Every sound-safe file is included by a test film's music (mix-only: its mix)
         run: |
           missing=0
           for entry in $LIBS; do
@@ -107,9 +107,21 @@ jobs:
                 missing=1
               fi
             done
+            # mix-only files call music()/sfx(), which only a mix shader has
+            for f in $(grep -l '^// sound: mix only' $lib/*.glsl); do
+              inc="#include <$prefix/$(basename "$f")>"
+              if ! grep -qF "$inc" tests/*/mix.glsl; then
+                echo "::error file=$f::says sound: mix only but no tests/*/mix.glsl includes it (add: $inc)"
+                missing=1
+              fi
+              if grep -nE '\bdFdx|\bdFdy|\bfwidth|\bgl_FragCoord|\bdiscard|\btexture *\(' "$f"; then
+                echo "::error file=$f::a mix-only file uses derivatives, gl_FragCoord, discard or texture() (CONVENTIONS.md §5)"
+                missing=1
+              fi
+            done
             for f in $lib/*.glsl; do
-              if ! grep -qE '^// sound: (yes|picture only)' "$f"; then
-                echo "::error file=$f::header doesn't say '// sound: yes' or '// sound: picture only'"
+              if ! grep -qE '^// sound: (yes|mix only|picture only)' "$f"; then
+                echo "::error file=$f::header doesn't say '// sound: yes', '// sound: mix only' or '// sound: picture only'"
                 missing=1
               fi
             done
@@ -122,6 +134,7 @@ jobs:
           shotglass check tests/film --web --no-gpu
           shotglass check tests/sound --web --no-gpu
           shotglass check tests/instruments --web --no-gpu
+          shotglass check tests/mix --web --no-gpu
           shotglass check tests/transitions --web --no-gpu
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
@@ -130,6 +143,7 @@ jobs:
           xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/mix --size 320x180 --frames 1
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change
@@ -162,6 +176,8 @@ jobs:
             --compare tests/golden/sound.wav
           xvfb-run -a shotglass wav tests/instruments --rate 8000 --out golden-out/instruments.wav \
             --compare tests/golden/instruments.wav
+          xvfb-run -a shotglass wav tests/mix --rate 8000 --out golden-out/mix.wav \
+            --compare tests/golden/mix.wav
       - if: success() || failure()
         uses: actions/upload-artifact@v4
         with:

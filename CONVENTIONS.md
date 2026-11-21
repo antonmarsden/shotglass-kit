@@ -137,22 +137,34 @@ So:
 - **Each file says in its header whether it's sound-safe.** A sound-safe file uses no
   derivatives, no implicit-LOD `texture()`, no `gl_FragCoord`, no `discard`, and only
   includes other sound-safe files. Write `// sound: yes` or `// sound: picture only`
-  in the file header. A test film's music includes every sound-safe file, so
+  in the file header (or `// sound: mix only`, below). A test film's music includes
+  every sound-safe file, so
   glslang rejects a picture uniform in one; derivatives would still compile there
   (sound shaders are fragment shaders too), so CI also greps sound-safe files for
   `dFdx`, `dFdy`, `fwidth`, `gl_FragCoord`, `discard` and `texture(`.
+- **Mix-only files** call the engine's `music(samp)` / `sfx(samp)`, which exist only in
+  a `mainMix` shader, so they say `// sound: mix only`. They follow the sound-safe
+  rules otherwise, take the sample rate as a parameter (`rate`, as `int(iSampleRate)`)
+  rather than reading the uniform, and a test film's `mix.glsl` includes each one.
+  Mix reads are deterministic only within the window the engine keeps: `mix_lookback`
+  seconds back (default 1) and 50 ms ahead. Clamp look-aheads to 50 ms, and say in
+  the header how far back each function reads (`reads: up to ... seconds back`).
+  No feedback either (§3): an echo is a sum of fixed taps, never a reading of the
+  mix's own output.
 - **Sound output** is `vec2` (left, right) in -1..1. Library sound functions return a
-  level around ±1 and leave the gain to the caller; they never clip.
+  level around ±1 and leave the gain to the caller; they never clip (except
+  `kit_soft_clip`, whose job it is).
 
 ## 6. Tests
 
 - **Every public function is called by a test film** (`tests/film`, or `tests/sound`
-  and `tests/instruments` for the `sound/` library): a scene, a transition, or the music. Calling it, not just
+  `tests/instruments` and `tests/mix` for the `sound/` library): a scene, a transition,
+  the music or the mix. Calling it, not just
   including the file, so a reviewer can see what it does in the strip (or hear it) and
   so the GPU compiles the code path that matters. CI fails if a file isn't included or
   a public function isn't called.
 - **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,
-  `tests/instruments`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
+  `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;
   one that changes them on purpose re-blesses the reference in the same commit.
 - **Everything passes `shotglass check tests/film --web --no-gpu`**: glslang at GLSL
