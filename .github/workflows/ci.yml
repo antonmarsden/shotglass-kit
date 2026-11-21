@@ -7,7 +7,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "9879d846ab4123332d7eabd04f102878e9f84dd8"
+  SHOTGLASS_REV: "f681331ac8f993060aa0459c737ab8fef81fcafd"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -31,15 +31,20 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$SHOTGLASS_REV" shotglass
 
-      - name: Every library file is used by the test film
+      # Each library folder and the name the test films include it by
+      # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
+      - name: Library list
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound' >> "$GITHUB_ENV"
+
+      - name: Every library file is used by a test film
         run: |
           missing=0
-          for lib in core transitions; do
-            prefix=$([ "$lib" = core ] && echo kit || echo transitions)
+          for entry in $LIBS; do
+            lib=${entry%%:*}; prefix=${entry##*:}
             for f in $lib/*.glsl; do
               inc="#include <$prefix/$(basename "$f")>"
-              if ! grep -rqF "$inc" tests/film; then
-                echo "::error file=$f::not included by tests/film (add: $inc)"
+              if ! grep -rqF "$inc" tests; then
+                echo "::error file=$f::not included by any test film under tests/ (add: $inc)"
                 missing=1
               fi
             done
@@ -47,13 +52,13 @@ jobs:
           exit $missing
 
       # CONVENTIONS.md §6: calling it, not just including the file.
-      - name: Every public function is called by the test film
+      - name: Every public function is called by a test film
         run: |
           missing=0
-          for f in core/*.glsl; do
+          for f in core/*.glsl sound/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
-              if ! grep -rqE "\b$fn *\(" tests/film; then
-                echo "::error file=$f::$fn is never called by tests/film"
+              if ! grep -rqE "\b$fn *\(" tests; then
+                echo "::error file=$f::$fn is never called by a test film under tests/"
                 missing=1
               fi
             done
@@ -61,41 +66,61 @@ jobs:
           exit $missing
 
       # CONVENTIONS.md §5: a file that says it's sound-safe is compiled as sound too.
-      - name: Every sound-safe file is included by the test film's music
+      - name: Every sound-safe file is included by a test film's music
         run: |
           missing=0
-          for f in $(grep -l '^// sound: yes' core/*.glsl); do
-            inc="#include <kit/$(basename "$f")>"
-            if ! grep -qF "$inc" tests/film/music.glsl; then
-              echo "::error file=$f::says sound: yes but tests/film/music.glsl doesn't include it (add: $inc)"
-              missing=1
-            fi
-          done
-          # glslang can't catch these: sound shaders are fragment shaders too.
-          for f in $(grep -l '^// sound: yes' core/*.glsl); do
-            if grep -nE '\bdFdx|\bdFdy|\bfwidth|\bgl_FragCoord|\bdiscard|\btexture *\(' "$f"; then
-              echo "::error file=$f::says sound: yes but uses derivatives, gl_FragCoord, discard or texture() (CONVENTIONS.md §5)"
-              missing=1
-            fi
-          done
-          for f in core/*.glsl; do
-            if ! grep -qE '^// sound: (yes|picture only)' "$f"; then
-              echo "::error file=$f::header doesn't say '// sound: yes' or '// sound: picture only'"
-              missing=1
-            fi
+          for entry in $LIBS; do
+            lib=${entry%%:*}; prefix=${entry##*:}
+            [ "$lib" = transitions ] && continue
+            for f in $(grep -l '^// sound: yes' $lib/*.glsl); do
+              inc="#include <$prefix/$(basename "$f")>"
+              if ! grep -qF "$inc" tests/*/music.glsl; then
+                echo "::error file=$f::says sound: yes but no tests/*/music.glsl includes it (add: $inc)"
+                missing=1
+              fi
+              # glslang can't catch these: sound shaders are fragment shaders too.
+              if grep -nE '\bdFdx|\bdFdy|\bfwidth|\bgl_FragCoord|\bdiscard|\btexture *\(' "$f"; then
+                echo "::error file=$f::says sound: yes but uses derivatives, gl_FragCoord, discard or texture() (CONVENTIONS.md §5)"
+                missing=1
+              fi
+            done
+            for f in $lib/*.glsl; do
+              if ! grep -qE '^// sound: (yes|picture only)' "$f"; then
+                echo "::error file=$f::header doesn't say '// sound: yes' or '// sound: picture only'"
+                missing=1
+              fi
+            done
           done
           exit $missing
 
       # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
       - name: Strict GLSL check
-        run: shotglass check tests/film --web --no-gpu
+        run: |
+          shotglass check tests/film --web --no-gpu
+          shotglass check tests/sound --web --no-gpu
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
       - name: Render on Mesa
         run: |
           xvfb-run -a shotglass check tests/film --size 320x180 --frames 1
           xvfb-run -a shotglass strip tests/film --count 8 --size 320x180 --out strip.png
+          xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
+
+      # Golden soundtracks (tests/golden/<film>.wav, 8 kHz like the engine's golden tests),
+      # rendered on Mesa. Within `wav --compare`'s default tolerance, so real GPUs pass too.
+      # To update one on purpose, see "Audio references" in README.md.
+      - name: Soundtracks match their references
+        run: |
+          mkdir -p golden-failures
+          xvfb-run -a shotglass wav tests/sound --rate 8000 --out golden-failures/sound.wav \
+            --compare tests/golden/sound.wav
       - uses: actions/upload-artifact@v4
         with:
           name: test-film-strip
           path: strip.png
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-sound-failures
+          path: golden-failures/
+          if-no-files-found: ignore
