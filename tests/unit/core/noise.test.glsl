@@ -4,13 +4,13 @@
 
 // The reference values are lowbias32 computed in 64-bit integer arithmetic on the CPU.
 void test_hash_u_matches_the_cpu() {
-    expect(kit_hash_u(0u) == 0u);
-    expect(kit_hash_u(1u) == 0x688990c0u, float(kit_hash_u(1u)));
-    expect(kit_hash_u(2u) == 0xd1132181u, float(kit_hash_u(2u)));
-    expect(kit_hash_u(12345u) == 0x912efcf7u, float(kit_hash_u(12345u)));
-    expect(kit_hash_u(0xffffffffu) == 0x6768824au, float(kit_hash_u(0xffffffffu)));
-    expect(kit_hash_u(uvec2(3u, 7u)) == 0x0795498eu, float(kit_hash_u(uvec2(3u, 7u))));
-    expect(kit_hash_u(uvec3(1u, 2u, 3u)) == 0x2f60c84eu, float(kit_hash_u(uvec3(1u, 2u, 3u))));
+    expect_eq(kit_hash_u(0u), 0u);
+    expect_eq(kit_hash_u(1u), 0x688990c0u);
+    expect_eq(kit_hash_u(2u), 0xd1132181u);
+    expect_eq(kit_hash_u(12345u), 0x912efcf7u);
+    expect_eq(kit_hash_u(0xffffffffu), 0x6768824au);
+    expect_eq(kit_hash_u(uvec2(3u, 7u)), 0x0795498eu);
+    expect_eq(kit_hash_u(uvec3(1u, 2u, 3u)), 0x2f60c84eu);
 }
 
 void test_hash_matches_the_cpu() {
