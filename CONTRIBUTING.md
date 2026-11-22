@@ -29,7 +29,7 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library): CI
+- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /
@@ -43,13 +43,36 @@ public domain, CC0) is fine if you name its source and licence in the file.
   (integer maths, exact literals, clamps). A test that fails because the code breaks its
   header is a bug in the code or the header: fix one of them, don't widen the test.
 - **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`,
-  and of `tests/animation` with `tests/golden/animation.png`.
+  of `tests/animation` with `tests/golden/animation.png`, and of `tests/text` with
+  `tests/golden/text.png`.
   If a change is meant to alter what the test film looks like, re-bless it ("Golden
   picture" below), look at it, and commit it with the change.
 - **Sound changes:** CI compares the soundtracks of `tests/sound`, `tests/instruments` and
   `tests/mix` with `tests/golden/sound.wav`, `instruments.wav` and `mix.wav`.
   If the sound is meant to change, re-bless the reference (README, "Audio references"),
   listen to it, and commit it with the change.
+
+## Adding a font
+
+`fonts/` ships font files, no GLSL. A new family:
+
+- **OFL-1.1 only** (the SIL Open Font License allows embedding and redistribution, also
+  in commercial films). No fonts under other licences, and nothing non-commercial.
+- **Unmodified,** from [google/fonts](https://github.com/google/fonts) (`ofl/<family>/`):
+  no subsetting, no re-saving. A Reserved Font Name only binds *modified* versions, so
+  files shipped as they are can keep their name. Renaming the file is fine (drop the
+  `[wght]` brackets, as for Inter).
+- **One folder per family** (`fonts/<family>/`) with the family's `OFL.txt` from the same
+  place next to the fonts, and a row in [`fonts/README.md`](fonts/README.md) giving the
+  source path and the google/fonts commit.
+- **Small:** a weight or two, no italics unless asked for; scripts with large fonts
+  (CJK) go in a library of their own, so nobody downloads them by accident.
+- **Used by a test film:** name it in `tests/text/movie.toml`'s `[fonts]` and set a
+  block in it. CI fails if a font isn't named by a test film or has no `OFL.txt` beside it.
+
+Adding a font is a patch release; removing or replacing one (even with a newer version
+of the same family, which changes how text sets) is breaking, like changing a function's
+output.
 
 ## Adding a transition
 
@@ -79,6 +102,8 @@ picture" step of [`ci.yml`](.github/workflows/ci.yml); add one if you add a scen
 `tests/animation` (core/animate.glsl) has its own reference, `tests/golden/animation.png`,
 checked the same way by the "Animation film matches its golden picture" step, so a change
 to an animation helper doesn't touch `film.png`; everything below applies to it too.
+Likewise `tests/text` (text/ and fonts/) and `tests/golden/text.png`, checked by the "Text
+film matches its golden picture" step.
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
 and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures
