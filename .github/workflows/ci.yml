@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "ad16b0dab1362bea79373d9dbf00744302b06db8"
+  SHOTGLASS_REV: "75ba3df298d49e9221501d5365b7bcbce24273d0"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -56,8 +56,9 @@ jobs:
 
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
+      # fonts/ has no GLSL; the next step but one checks its fonts instead.
       - name: Library list
-        run: echo 'LIBS=core:kit transitions:transitions sound:sound' >> "$GITHUB_ENV"
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text' >> "$GITHUB_ENV"
 
       - name: Every library file is used by a test film
         run: |
@@ -74,12 +75,38 @@ jobs:
           done
           exit $missing
 
+      # fonts/: every font is named by a test film (as "<fonts/...>"), has the family's
+      # OFL.txt next to it, and the library declares OFL-1.1. LICENSE-OFL.txt carries
+      # every family's copyright line (bundle/freeze copy LICENSE* files, not OFL.txt).
+      - name: Every font is used by a test film and carries its licence
+        run: |
+          missing=0
+          grep -qF '"OFL-1.1"' fonts/library.toml || { echo "::error file=fonts/library.toml::licences must list OFL-1.1"; missing=1; }
+          for f in $(find fonts -name '*.ttf' -o -name '*.otf' | sort); do
+            ref="<${f}>"
+            if ! grep -rqF --include=movie.toml "$ref" tests; then
+              echo "::error file=$f::no test film's movie.toml names it (add a [fonts] entry: file = \"$ref\")"
+              missing=1
+            fi
+            if [ ! -f "$(dirname "$f")/OFL.txt" ]; then
+              echo "::error file=$f::no OFL.txt next to it"
+              missing=1
+            fi
+          done
+          for l in fonts/*/OFL.txt; do
+            if ! grep -qF "$(head -n1 "$l" | tr -d '\r')" fonts/LICENSE-OFL.txt; then
+              echo "::error file=fonts/LICENSE-OFL.txt::doesn't have the copyright line of $l"
+              missing=1
+            fi
+          done
+          exit $missing
+
       # CONVENTIONS.md §6: calling it, not just including the file.
       - name: Every public function is called by a test film
         run: |
           missing=0
-          for f in core/*.glsl sound/*.glsl; do
-            for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
+          for f in core/*.glsl sound/*.glsl text/*.glsl; do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
                 missing=1
@@ -94,8 +121,8 @@ jobs:
       - name: Every public function has a unit test
         run: |
           missing=0
-          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl); do
-            for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
                 missing=1
@@ -153,6 +180,7 @@ jobs:
           shotglass check tests/instruments --web --no-gpu
           shotglass check tests/mix --web --no-gpu
           shotglass check tests/transitions --web --no-gpu
+          shotglass check tests/text --web --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
@@ -168,6 +196,7 @@ jobs:
           xvfb-run -a shotglass check tests/sound --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/mix --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/text --size 320x180 --frames 1
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change
@@ -196,6 +225,19 @@ jobs:
         env:
           ANIMATION_FRAMES: bounce+0.541667,bounce+0.958333,bounce+1.291667,bounce+1.775,bounce+2.041667,bounce+2.25,bounce+2.708333,bounce+3.041667
 
+      # Golden picture of tests/text (text/ with every font in fonts/): the title fading
+      # in and in full (shadow, glow, outline, gradient ink, the tagline from coverage),
+      # the lower third sliding in and in place (baseline alignment, anchoring, edge
+      # offsets, kit_text_offset echoes). Larger frames than the other films, so the
+      # small text is more than a few pixels. Same tolerance and update steps as above.
+      - name: Text film matches its golden picture
+        run: |
+          mkdir -p golden-out
+          xvfb-run -a shotglass strip tests/text --size 480x270 --cols 2 --out golden-out/text.png \
+            --at "$TEXT_FRAMES" --compare tests/golden/text.png
+        env:
+          TEXT_FRAMES: title+0.5,title+2.5,lower-third+0.4,lower-third+2.5
+
       # Every kit transition, with and without parameters, starts exactly on the old shot
       # and ends exactly on the new one (zero tolerance). The engine's own selftest checks
       # this with fixture transitions; this checks the kit's. See the script's header.
@@ -221,6 +263,7 @@ jobs:
           path: |
             golden-out/film.png
             golden-out/animation.png
+            golden-out/text.png
           if-no-files-found: ignore
       # The actual renders next to their diffs: <name>.diff.png (magenta = differs),
       # <name>.diff.wav, and transitions/ (expected.png, endpoints.png, endpoints.diff.png).

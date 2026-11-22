@@ -158,7 +158,7 @@ So:
 ## 6. Tests
 
 - **Every public function is called by a test film** (`tests/film` or `tests/animation`, or `tests/sound`
-  `tests/instruments` and `tests/mix` for the `sound/` library): a scene, a transition,
+  `tests/instruments` and `tests/mix` for the `sound/` library, or `tests/text` for `text/`): a scene, a transition,
   the music or the mix. Calling it, not just
   including the file, so a reviewer can see what it does in the strip (or hear it) and
   so the GPU compiles the code path that matters. CI fails if a file isn't included or

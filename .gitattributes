@@ -1,3 +1,7 @@
 * text=auto eol=lf
 *.wav binary
 *.png binary
+*.ttf binary
+*.otf binary
+# Font licences exactly as published (bungee/OFL.txt has CRLF line ends)
+fonts/*/OFL.txt -text

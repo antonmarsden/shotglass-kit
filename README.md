@@ -11,6 +11,8 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
+| [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
+| [`fonts/`](fonts) | `shotglass-kit/fonts` | OFL-1.1 fonts, unmodified from Google Fonts: Inter (variable), Atkinson Hyperlegible (regular, bold), Bungee (display) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
@@ -26,6 +28,8 @@ shotglass = "0.1"
 kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
+text = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
+fonts = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "fonts" }
 ```
 
 ```glsl
@@ -59,6 +63,57 @@ transition = { type = "fx/iris.glsl", duration = 0.8, params = { center = [0.3, 
 ```
 
 Every transition lists its parameters at the top of its file.
+
+### Text
+
+shotglass sets the words of a `[texts]` block into a texture (coverage, and a signed
+distance field for crisp edges) and binds it to an `iChannel`; `text/block.glsl` draws it.
+Fonts can come from `fonts/` (OFL-1.1; see [fonts/README.md](fonts/README.md)) or the
+film's own folder. Needs `shotglass = "0.1.3"` in `shotglass.toml`.
+
+```toml
+# movie.toml
+[fonts]
+title = { file = "<fonts/bungee/Bungee-Regular.ttf>" }
+body = { file = "<fonts/inter/Inter-Variable.ttf>", variations = { wght = 450 } }
+
+[texts]
+title = { text = "Big Shadow", font = "title", size = 128, sdf_spread = 16 }
+tagline = { text = "a tiny mouse and a lot of wall", font = "body", size = 64 }
+
+[[shot]]
+id = "titlecard"
+scene = "scenes/title.glsl"
+duration = 4.0
+channels = ["title", "tagline"]
+```
+
+```glsl
+#include <text/block.glsl>
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec3 col = vec3(0.05, 0.05, 0.1);
+    // Centred at (0.5, 0.55) of the frame, an em 0.2 frame heights tall.
+    kit_text_box t = kit_text_place(iChannelResolution[0], iChannelMeta[0], fragCoord, iResolution.xy, vec2(0.5, 0.55), 0.2);
+    col = mix(col, vec3(0.0), 0.6 * kit_text_shadow(iChannel0, t, vec2(0.04, -0.05), 0.1));
+    col += vec3(1.0, 0.5, 0.2) * 0.4 * kit_text_glow(iChannel0, t, 0.15);
+    col = mix(col, vec3(0.1), kit_text_outline(iChannel0, t, 0.05));
+    col = mix(col, vec3(1.0, 0.9, 0.7), kit_text_edge(iChannel0, t, 0.0));
+    // The tagline's first baseline at 0.25 of the frame height, centred.
+    kit_text_box s = kit_text_place_baseline(iChannelResolution[1], iChannelMeta[1], fragCoord, iResolution.xy, vec2(0.5, 0.25), 0.05, 0.5);
+    col = mix(col, vec3(0.9), kit_text_coverage(iChannel1, s));
+    fragColor = vec4(col, 1.0);
+}
+```
+
+Sizes are in ems: `em` in `kit_text_place*` is the font size as a fraction of the frame
+height, so blocks rasterised at different `size`s line up and match (`size` only sets
+the quality: rasterise as large as the text gets on screen). Outline widths, glow radii,
+shadow offsets and softness are ems too, up to `kit_text_reach(meta)` (the block's
+`sdf_spread` over its `size`, 0.125 em by default: raise `sdf_spread` for more).
+`kit_text_box` also gives `local` (0..1 across the text) and `p` (ems from the first
+baseline) for gradients, wipes and per-line effects. The helpers assume the block's
+default `vflip = true` and handle the flip themselves.
 
 ### Sound
 
@@ -190,7 +245,8 @@ uses every transition; [`tests/sound`](tests/sound) and
 [`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
-bar. They use the libraries in this checkout, declared once in the
+bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` and every
+font in `fonts/`. They use the libraries in this checkout, declared once in the
 [`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
 never download anything:
 
@@ -201,6 +257,7 @@ shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
+shotglass play tests/text                   # the text library and fonts
 shotglass test tests/unit                   # unit and property tests, on your GPU
 ```
 
@@ -236,8 +293,8 @@ To try a working copy in your own film without changing its `shotglass.toml`:
 SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film
 ```
 
-CI runs the strict check, renders the films on Mesa, compares the test film with its
-golden picture and the audio references, checks that every transition starts exactly on
+CI runs the strict check, renders the films on Mesa, compares the test, animation and text films with their
+golden pictures and the audio references, checks that every transition starts exactly on
 the old shot and ends exactly on the new one, and fails if any library file isn't included by a test film or a public function
 isn't called by one. A daily canary runs the same checks against shotglass `main`
 ([CONTRIBUTING.md](CONTRIBUTING.md#canary)). New code

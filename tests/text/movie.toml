@@ -1,0 +1,37 @@
+# The text library's test film: a title card and a lower third, drawn with text/ from
+# blocks set in every font of fonts/. Every text/ function is called here. CI checks it
+# strictly (GLSL 3.30 and GLSL ES 3.00), renders it on Mesa and compares it with
+# tests/golden/text.png. The libraries come from this checkout (shotglass.toml at the
+# kit's root), never the network.
+title = "shotglass-kit text"
+aspect = [16, 9]
+
+[fonts]
+display = { file = "<fonts/bungee/Bungee-Regular.ttf>" }
+sans = { file = "<fonts/inter/Inter-Variable.ttf>" }
+sans_bold = { file = "<fonts/inter/Inter-Variable.ttf>", variations = { wght = 700 } }
+legible = { file = "<fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.ttf>" }
+legible_bold = { file = "<fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.ttf>" }
+
+[texts]
+# Rasterised at different sizes on purpose: the scenes size them by em, so the size
+# here only sets the quality. The title is magnified, the tagline drawn smaller.
+title = { text = "Big Shadow", font = "display", size = 96, sdf_spread = 16 }
+tagline = { text = "a tiny mouse, a tealight,\nand a lot of wall", font = "sans", size = 72, align = "center" }
+name = { text = "Ada Mouse", font = "sans_bold", size = 64 }
+role = { text = "director", font = "legible", size = 40 }
+note = { text = "shotglass-kit/text", font = "legible_bold", size = 32 }
+
+[[shot]]
+id = "title"
+scene = "scenes/title.glsl"
+duration = 3
+channels = ["title", "tagline"]
+uniforms.uIn = { keys = [[0.0, 0.0], [1.5, 1.0]], ease = "smooth" }
+
+[[shot]]
+id = "lower-third"
+scene = "scenes/lower_third.glsl"
+duration = 3
+channels = ["name", "role", "note"]
+uniforms.uIn = { keys = [[0.0, 0.0], [1.0, 1.0]], ease = "out" }
