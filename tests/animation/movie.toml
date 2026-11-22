@@ -6,14 +6,11 @@
 # GLSL ES 3.00), renders it on Mesa and compares eight frames with
 # tests/golden/animation.png. It's its own film so tests/film's golden picture doesn't
 # change when an animation helper does.
-# The libraries come from this checkout (movie.local.toml), never the network.
+# The libraries come from this checkout (shotglass.toml at the kit's root), never
+# the network.
 title = "shotglass-kit animation tests"
-shotglass = "0.1"
 aspect = [16, 9]
 fps = 24
-
-[libraries]
-kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
 
 [[shot]]
 id = "bounce"

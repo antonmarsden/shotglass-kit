@@ -163,6 +163,12 @@ So:
   including the file, so a reviewer can see what it does in the strip (or hear it) and
   so the GPU compiles the code path that matters. CI fails if a file isn't included or
   a public function isn't called.
+- **Every public function's contract has a unit test** in `tests/unit/` (`shotglass
+  test`): the header's endpoints, ranges and identities, as `expect*` assertions run on
+  the GPU, including property tests over the whole documented input range. The header
+  is the spec; when a test and the code disagree, one of them is wrong. CI checks that
+  every public function is called from `tests/unit/`, except in mix-only files (they
+  read the mix's buses, which only a mix shader has; `tests/mix` covers them).
 - **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,
   `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;

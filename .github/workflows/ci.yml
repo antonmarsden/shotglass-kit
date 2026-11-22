@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "6f5c41f287a53e5ea290e64e2c069a2267c90962"
+  SHOTGLASS_REV: "ee519cba1b40409f9e39f6db816d60f687bd7452"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -66,7 +66,7 @@ jobs:
             lib=${entry%%:*}; prefix=${entry##*:}
             for f in $lib/*.glsl; do
               inc="#include <$prefix/$(basename "$f")>"
-              if ! grep -rqF "$inc" tests; then
+              if ! grep -rqF --exclude-dir=unit "$inc" tests; then
                 echo "::error file=$f::not included by any test film under tests/ (add: $inc)"
                 missing=1
               fi
@@ -80,8 +80,24 @@ jobs:
           missing=0
           for f in core/*.glsl sound/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
-              if ! grep -rqE "\b$fn *\(" tests; then
+              if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
+                missing=1
+              fi
+            done
+          done
+          exit $missing
+
+      # CONVENTIONS.md §6: every public function's contract has a unit test. Mix-only
+      # files (`// sound: mix only`) are skipped: they read the mix's buses, which only
+      # a mix shader has, so tests/mix covers them.
+      - name: Every public function has a unit test
+        run: |
+          missing=0
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl); do
+            for fn in $(grep -oE '^[a-z0-9]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9]+ //; s/\($//' | sort -u); do
+              if ! grep -rqE "\b$fn *\(" tests/unit; then
+                echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
                 missing=1
               fi
             done
@@ -137,6 +153,12 @@ jobs:
           shotglass check tests/instruments --web --no-gpu
           shotglass check tests/mix --web --no-gpu
           shotglass check tests/transitions --web --no-gpu
+
+      # Unit and property tests of each function's documented contract (tests/unit,
+      # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
+      # strict check (330 and ES 3.00) first. See "Unit tests" in CONTRIBUTING.md.
+      - name: Unit tests
+        run: xvfb-run -a shotglass test tests/unit
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
       - name: Render on Mesa
