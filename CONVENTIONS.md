@@ -24,10 +24,13 @@ with the reason.
   `precision` statements (the engine sets `highp`). Any file can be included in any
   order; the engine includes each file once. Files may include their siblings
   (`#include "noise.glsl"`).
-- **Transition parameters** are the one exception to "no `#define`s": they're the
-  transition's interface. Because a parameter is a macro, it rewrites every matching
-  identifier in the transition's own includes, so a transition that includes other
-  files must use parameter names that don't occur in them.
+- **Transition and pass parameters** are the one exception to "no `#define`s": they're
+  the transition's (or the `fx/` pass's, or the blend's) interface, written with an
+  `#ifndef` default. Because a parameter is a macro, it rewrites every matching
+  identifier in the file's own includes, so a pass that includes other files must use
+  parameter names that don't occur in them (`fx/ops.glsl` names its function parameters
+  `lo` and `gn`, because the grade's params are `lift` and `gain`). Animatable inputs of
+  an `fx/` pass are uniforms (`uExposure`), defaulted with `#ifndef SG_HAS_<name>`.
 
 ## 2. Parameters and units
 
@@ -163,6 +166,12 @@ So:
   including the file, so a reviewer can see what it does in the strip (or hear it) and
   so the GPU compiles the code path that matters. CI fails if a file isn't included or
   a public function isn't called.
+- **`fx/` and `blend/`** keep their maths in one file (`fx/ops.glsl`, `blend/modes.glsl`)
+  and each pass is a few lines of `mainImage` or `blend` around it, because unit tests
+  have no scene uniforms. The functions are called by the passes, which `tests/layers`
+  draws (a layer with `type = "fx/<name>"` or `blend = "blend/<name>"`; CI checks that
+  every file is used that way, or included by a pass). Premultiplied alpha is handled
+  only in `kit_blend_source` and `kit_blend_composite`.
 - **Every public function's contract has a unit test** in `tests/unit/` (`shotglass
   test`): the header's endpoints, ranges and identities, as `expect*` assertions run on
   the GPU, including property tests over the whole documented input range. The header

@@ -1,0 +1,207 @@
+# The kit's layer test film (fx/ and blend/): the blend modes one after another, each
+# over the same picture with the same swatch layer (alpha rising left to right), then
+# each fx pass. One second each; `base+<n>.5` in a strip is the n-th. CI checks it
+# strictly, renders it and compares it with tests/golden/layers.png.
+# Order: multiply, screen, overlay, hardlight, add, darken, lighten, difference,
+# colordodge, colorburn, softlight (0-11 s); grade, grain, vignette, letterbox, place,
+# bloom with screen, bloom with add (11-18 s).
+title = "shotglass-kit layer tests"
+aspect = [16, 9]
+
+[[shot]]
+id = "base"
+scene = "scenes/base.glsl"
+duration = 18
+
+[[layer]]
+id = "multiply"
+scene = "layers/swatch.glsl"
+blend = "blend/multiply"
+from = 0
+to = 1
+
+[[layer]]
+id = "screen"
+scene = "layers/swatch.glsl"
+blend = "blend/screen"
+from = 1
+to = 2
+
+[[layer]]
+id = "overlay"
+scene = "layers/swatch.glsl"
+blend = "blend/overlay"
+from = 2
+to = 3
+
+[[layer]]
+id = "hardlight"
+scene = "layers/swatch.glsl"
+blend = "blend/hardlight"
+from = 3
+to = 4
+
+[[layer]]
+id = "add"
+scene = "layers/swatch.glsl"
+blend = "blend/add"
+from = 4
+to = 5
+
+[[layer]]
+id = "darken"
+scene = "layers/swatch.glsl"
+blend = "blend/darken"
+from = 5
+to = 6
+
+[[layer]]
+id = "lighten"
+scene = "layers/swatch.glsl"
+blend = "blend/lighten"
+from = 6
+to = 7
+
+[[layer]]
+id = "difference"
+scene = "layers/swatch.glsl"
+blend = "blend/difference"
+from = 7
+to = 8
+
+[[layer]]
+id = "colordodge"
+scene = "layers/swatch.glsl"
+blend = "blend/colordodge"
+from = 8
+to = 9
+
+[[layer]]
+id = "colorburn"
+scene = "layers/swatch.glsl"
+blend = "blend/colorburn"
+from = 9
+to = 10
+
+[[layer]]
+id = "softlight"
+scene = "layers/swatch.glsl"
+blend = "blend/softlight"
+from = 10
+to = 11
+
+[[layer]]
+id = "grade"
+type = "fx/grade"
+channels = ["@input"]
+from = 11
+to = 12
+params = { lift = [0.04, 0.0, 0.08], gain = [1.1, 1.0, 0.9] }
+uniforms.uExposure = { keys = [[0, -1.0], [1, 0.5]] }
+uniforms.uSaturation = 1.5
+uniforms.uContrast = 1.2
+
+[[layer]]
+id = "grain"
+type = "fx/grain"
+channels = ["@input"]
+from = 12
+to = 13
+params = { colored = 1.0 }
+uniforms.uAmount = 0.3
+
+[[layer]]
+id = "vignette"
+type = "fx/vignette"
+from = 13
+to = 14
+uniforms.uAmount = 0.9
+uniforms.uSoftness = 0.7
+
+[[layer]]
+id = "bars"
+type = "fx/letterbox"
+from = 14
+to = 15
+uniforms.uAspect = { keys = [[0, 1.78], [0.8, 2.39]] }
+
+[[layer]]
+id = "pip"
+type = "fx/place"
+channels = ["@picture"]
+scale = 1
+from = 15
+to = 16
+params = { anchor = [1.0, 1.0] }
+uniforms.uPos = [0.96, 0.94]
+uniforms.uSize = 0.35
+
+# Bloom (screen): a hidden bright pass, a hidden blur across, and the blur down, blended.
+[[layer]]
+id = "bright_screen"
+type = "fx/bright"
+channels = ["@input"]
+scale = 0.5
+opacity = 0.0
+from = 16
+to = 17
+uniforms.uThreshold = 0.7
+
+[[layer]]
+id = "across_screen"
+type = "fx/blur"
+channels = ["@bright_screen"]
+scale = 0.5
+opacity = 0.0
+from = 16
+to = 17
+params = { direction = [1.0, 0.0] }
+uniforms.uRadius = 0.03
+
+[[layer]]
+id = "bloom_screen"
+type = "fx/blur"
+channels = ["@across_screen"]
+scale = 0.5
+opacity = 0.8
+blend = "blend/screen"
+from = 16
+to = 17
+params = { direction = [0.0, 1.0] }
+uniforms.uRadius = 0.03
+uniforms.uGain = 2.0
+
+# Bloom (add): a hidden bright pass, a hidden blur across, and the blur down, blended.
+[[layer]]
+id = "bright_add"
+type = "fx/bright"
+channels = ["@input"]
+scale = 0.5
+opacity = 0.0
+from = 17
+to = 18
+uniforms.uThreshold = 0.7
+
+[[layer]]
+id = "across_add"
+type = "fx/blur"
+channels = ["@bright_add"]
+scale = 0.5
+opacity = 0.0
+from = 17
+to = 18
+params = { direction = [1.0, 0.0] }
+uniforms.uRadius = 0.03
+
+[[layer]]
+id = "bloom_add"
+type = "fx/blur"
+channels = ["@across_add"]
+scale = 0.5
+opacity = 0.8
+blend = "blend/add"
+from = 17
+to = 18
+params = { direction = [0.0, 1.0] }
+uniforms.uRadius = 0.03
+uniforms.uGain = 2.0
