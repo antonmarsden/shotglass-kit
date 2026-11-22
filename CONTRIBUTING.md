@@ -34,6 +34,14 @@ public domain, CC0) is fine if you name its source and licence in the file.
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /
   `sfx()`) by a test film's `mix.glsl`.
+- **Unit-test its contract** in `tests/unit/<library>/<file>.test.glsl` (`shotglass
+  test tests/unit`, run by CI on Mesa): the header's promises are the spec. Endpoints and
+  known values, the documented range over the whole input range (a property test:
+  `void test_x(float t)` sweeps `t` over 0..1), identities and inverses, and silence or
+  zero where the header says so. Compare floats with `expect_near` / `expect_rel` and a
+  tolerance you can justify, `expect_eq` only where the result is exact on every GPU
+  (integer maths, exact literals, clamps). A test that fails because the code breaks its
+  header is a bug in the code or the header: fix one of them, don't widen the test.
 - **Picture changes:** CI compares frames of `tests/film` with `tests/golden/film.png`,
   and of `tests/animation` with `tests/golden/animation.png`.
   If a change is meant to alter what the test film looks like, re-bless it ("Golden

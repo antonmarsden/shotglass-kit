@@ -201,7 +201,16 @@ shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
+shotglass test tests/unit                   # unit and property tests, on your GPU
 ```
+
+[`tests/unit`](tests/unit) holds unit and property tests of what each function's header
+promises (`core/ease.test.glsl` for `core/ease.glsl`, and so on), run by
+[`shotglass test`](https://github.com/antonmarsden/shotglass#testing-glsl) with the
+engine's `expect*` assertions. Where the test films show that something looks and sounds
+right, these pin the contract: exact endpoints, ranges, identities (sRGB round trip, an
+octave doubles), hashes bit for bit against CPU-computed values, SDFs that never change
+faster than the point moves, notes silent from their documented end.
 
 ### Audio references
 

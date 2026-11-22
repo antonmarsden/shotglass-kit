@@ -90,7 +90,7 @@ float kit_inst_bell(float t, float hz, float decay, float index) {
 //   e.g. float v = kit_inst_epiano(since, kit_note_hz(60), 0.8, 0.5);
 float kit_inst_epiano(float t, float hz, float held, float bright) {
     held = max(held, 0.0);
-    if (t < 0.0 || t > held + 0.25) return 0.0;
+    if (t < 0.0 || t >= held + 0.25) return 0.0;   // silent from held + 0.25, as documented
     bright = clamp(bright, 0.0, 1.0);
     float amp = smoothstep(0.0, 0.003, t) * kit_env_adsr(t, held, 0.0, 2.5, 0.15, 0.25);
     float index = bright * (0.3 + 1.5 * kit_env_ar(t, 0.0, 0.6));

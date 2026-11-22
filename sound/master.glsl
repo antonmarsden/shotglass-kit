@@ -35,13 +35,14 @@ float kit_duck(float level, float lo, float hi, float depth) {
 
 // kit_soft_clip(x, ceiling): keep a sample inside +-ceiling without a hard edge.
 // Below half the ceiling it changes nothing; above, it bends smoothly (tanh, same
-// slope where the bend starts) towards the ceiling, which it never reaches. Odd
+// slope where the bend starts) towards the ceiling, which it never passes. Odd
 // (kit_soft_clip(-x) = -kit_soft_clip(x)), so it adds no DC offset to a signal that
 // has none. Clipping adds overtones: keep levels up to the ceiling for safety, and
 // use kit_mix_limit (sound/mix.glsl) to bring the loudness down.
 //   x        a sample, float or stereo
 //   ceiling  the largest output, > 0 (1.0 for full scale, 0.9 for a little headroom)
-//   ->  -ceiling .. ceiling (exclusive)
+//   ->  -ceiling .. ceiling: it gets there (in float32) from about 4.7 times the ceiling,
+//       never past it
 //   e.g. vec2 o = kit_soft_clip(vec2(1.4, -0.2), 0.9);
 float kit_soft_clip(float x, float ceiling) {
     float c = max(ceiling, 1e-6);

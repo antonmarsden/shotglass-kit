@@ -18,7 +18,8 @@ float kit_ease_smooth(float x) {
 // smootherstep: flatter start and end, no jolt in acceleration ("smoother")
 float kit_ease_smoother(float x) {
     x = clamp(x, 0.0, 1.0);
-    return x * x * x * (x * (6.0 * x - 15.0) + 10.0);
+    // min: the quintic rounds to 1.0000005 just below x = 1 (tests/unit/core/ease.test.glsl)
+    return min(x * x * x * (x * (6.0 * x - 15.0) + 10.0), 1.0);
 }
 
 // accelerate from rest ("in")
