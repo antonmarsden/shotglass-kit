@@ -1,0 +1,32 @@
+# Written by `shotglass fetch`/`update`. Commit it with the project.
+version = 1
+
+[[library]]
+name = "atkinsonhyperlegible"
+version = "0.0.0"
+source = "https://github.com/google/fonts"
+tag = "HEAD"
+rev = "06bfe0d62a98375cb09c942fa18e68bd32cff057"
+subdir = "ofl/atkinsonhyperlegible"
+google = "Atkinson Hyperlegible"
+sha256 = "3274cfe5bd41f6150e739232d19f9e0962e55136172a41949fc733974d8b1a6c"
+
+[[library]]
+name = "bungee"
+version = "0.0.0"
+source = "https://github.com/google/fonts"
+tag = "HEAD"
+rev = "06bfe0d62a98375cb09c942fa18e68bd32cff057"
+subdir = "ofl/bungee"
+google = "Bungee"
+sha256 = "0775127055dd27596a8a1171e146eeee7c036c11f02a491c555c7e7f67770a92"
+
+[[library]]
+name = "inter"
+version = "0.0.0"
+source = "https://github.com/google/fonts"
+tag = "HEAD"
+rev = "06bfe0d62a98375cb09c942fa18e68bd32cff057"
+subdir = "ofl/inter"
+google = "Inter"
+sha256 = "c0578f436b92f61fe7e2388bf9ed9beff28914f17accf4eaa85e2001cfdf75f6"

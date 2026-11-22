@@ -54,14 +54,13 @@ public domain, CC0) is fine if you name its source and licence in the file.
 
 ## Fonts
 
-The kit ships no fonts: films fetch any family from Google Fonts with
-`shotglass fonts add "<Family>"`, which copies the files, their licence and a
-`SOURCE.txt` (repo, commit) into the film's `fonts/` folder and writes its `[fonts]`
-entries (shotglass README, "Getting fonts"). Test films do the same: `tests/text` keeps its
-fonts in `tests/text/fonts/`, fetched at a pinned google/fonts commit (`--rev`) and
-committed, so CI never touches the network. CI checks that every font under a test
-film's `fonts/` is named by its `movie.toml` and has a licence file and `SOURCE.txt`
-beside it. Keep test fonts to the styles the film uses.
+The kit ships no fonts. A Google Fonts family is a library of its own: films declare it
+in their project (`name = { google = "Family" }`) and name its files in `[fonts]`
+(`"<name/File.ttf>"`); shotglass fetches it and pins it in `shotglass.lock` like any
+library. `shotglass fonts add "<Family>"` writes both (shotglass README, "Getting fonts").
+The test films do the same: `tests/text`'s families are declared in the kit's
+`shotglass.toml` and pinned in its `shotglass.lock`, so CI fetches the same files every
+time. CI fails if a font file is committed.
 
 ## Adding a transition
 

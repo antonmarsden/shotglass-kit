@@ -3,5 +3,3 @@
 *.png binary
 *.ttf binary
 *.otf binary
-# Font licences exactly as published (bungee/OFL.txt has CRLF line ends)
-tests/*/fonts/*/OFL.txt -text

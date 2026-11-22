@@ -68,18 +68,25 @@ shotglass sets the words of a `[texts]` block into a texture (coverage, and a si
 distance field for crisp edges) and binds it to an `iChannel`; `text/block.glsl` draws it.
 Needs `shotglass = "0.1.3"` in `shotglass.toml`.
 
-The kit ships no fonts: fetch any family from Google Fonts into the film, with its
-licence, and use it from the film's folder (see shotglass's README, "Getting fonts"):
+The kit ships no fonts: any Google Fonts family is a library of its own (see shotglass's
+README, "Getting fonts"). `shotglass fonts add` declares it, fetches it and pins it:
 
 ```sh
 shotglass fonts add "Bungee" "Inter"
 ```
 
 ```toml
-# movie.toml (fonts add writes the [fonts] entries; rename or add variations as you like)
+# shotglass.toml (written by fonts add)
+[libraries]
+bungee = { google = "Bungee" }
+inter = { google = "Inter" }
+```
+
+```toml
+# movie.toml (fonts add writes the [fonts] entries; rename them or add variations)
 [fonts]
-title = { file = "fonts/bungee/Bungee-Regular.ttf", licence = "OFL-1.1" }
-body = { file = "fonts/inter/Inter-Variable.ttf", variations = { wght = 450 }, licence = "OFL-1.1" }
+title = "<bungee/Bungee-Regular.ttf>"
+body = { file = "<inter/Inter[opsz,wght].ttf>", variations = { wght = 450 } }
 
 [texts]
 title = { text = "Big Shadow", font = "title", size = 128, sdf_spread = 16 }
@@ -249,8 +256,9 @@ uses every transition; [`tests/sound`](tests/sound) and
 [`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
-bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` and the
-fonts in its own `fonts/` folder. They use the libraries in this checkout, declared once in the
+bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
+Google Fonts families (declared in the kit's `shotglass.toml`, pinned in its
+`shotglass.lock`). They use the libraries in this checkout, declared once in the
 [`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
 never download anything:
 
