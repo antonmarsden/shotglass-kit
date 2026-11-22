@@ -1,5 +1,5 @@
 # The text library's test film: a title card and a lower third, drawn with text/ from
-# blocks set in every font of fonts/. Every text/ function is called here. CI checks it
+# blocks set in the fonts in its fonts/ folder. Every text/ function is called here. CI checks it
 # strictly (GLSL 3.30 and GLSL ES 3.00), renders it on Mesa and compares it with
 # tests/golden/text.png. The libraries come from this checkout (shotglass.toml at the
 # kit's root), never the network.
@@ -7,11 +7,13 @@ title = "shotglass-kit text"
 aspect = [16, 9]
 
 [fonts]
-display = { file = "<fonts/bungee/Bungee-Regular.ttf>" }
-sans = { file = "<fonts/inter/Inter-Variable.ttf>" }
-sans_bold = { file = "<fonts/inter/Inter-Variable.ttf>", variations = { wght = 700 } }
-legible = { file = "<fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Regular.ttf>" }
-legible_bold = { file = "<fonts/atkinson-hyperlegible/AtkinsonHyperlegible-Bold.ttf>" }
+# Fetched from Google Fonts with `shotglass fonts add "Bungee" "Inter" "Atkinson
+# Hyperlegible" --rev 06bfe0d` (the kit ships no fonts; see README, "Text").
+display = { file = "fonts/bungee/Bungee-Regular.ttf", licence = "OFL-1.1" }
+sans = { file = "fonts/inter/Inter-Variable.ttf", licence = "OFL-1.1" }
+sans_bold = { file = "fonts/inter/Inter-Variable.ttf", variations = { wght = 700 }, licence = "OFL-1.1" }
+legible = { file = "fonts/atkinsonhyperlegible/AtkinsonHyperlegible-Regular.ttf", licence = "OFL-1.1" }
+legible_bold = { file = "fonts/atkinsonhyperlegible/AtkinsonHyperlegible-Bold.ttf", licence = "OFL-1.1" }
 
 [texts]
 # Rasterised at different sizes on purpose: the scenes size them by em, so the size

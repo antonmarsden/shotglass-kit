@@ -56,7 +56,6 @@ jobs:
 
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
-      # fonts/ has no GLSL; the next step but one checks its fonts instead.
       - name: Library list
         run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text' >> "$GITHUB_ENV"
 
@@ -75,27 +74,25 @@ jobs:
           done
           exit $missing
 
-      # fonts/: every font is named by a test film (as "<fonts/...>"), has the family's
-      # OFL.txt next to it, and the library declares OFL-1.1. LICENSE-OFL.txt carries
-      # every family's copyright line (bundle/freeze copy LICENSE* files, not OFL.txt).
-      - name: Every font is used by a test film and carries its licence
+      # Test films' fonts (tests/<film>/fonts/, fetched with `shotglass fonts add`; the kit
+      # ships no fonts): every font is named by its film's movie.toml and sits in a family
+      # folder with its licence file and SOURCE.txt (where and which commit it came from).
+      - name: Every test-film font is used and carries its licence
         run: |
           missing=0
-          grep -qF '"OFL-1.1"' fonts/library.toml || { echo "::error file=fonts/library.toml::licences must list OFL-1.1"; missing=1; }
-          for f in $(find fonts -name '*.ttf' -o -name '*.otf' | sort); do
-            ref="<${f}>"
-            if ! grep -rqF --include=movie.toml "$ref" tests; then
-              echo "::error file=$f::no test film's movie.toml names it (add a [fonts] entry: file = \"$ref\")"
+          for f in $(find tests -path '*/fonts/*' \( -name '*.ttf' -o -name '*.otf' \) | sort); do
+            film=${f%%/fonts/*}; rel=fonts/${f#*/fonts/}
+            if ! grep -qF "\"$rel\"" "$film/movie.toml"; then
+              echo "::error file=$f::$film/movie.toml doesn't name it (add a [fonts] entry: file = \"$rel\")"
               missing=1
             fi
-            if [ ! -f "$(dirname "$f")/OFL.txt" ]; then
-              echo "::error file=$f::no OFL.txt next to it"
+            dir=$(dirname "$f")
+            if [ ! -f "$dir/OFL.txt" ] && [ ! -f "$dir/LICENSE.txt" ] && [ ! -f "$dir/UFL.txt" ]; then
+              echo "::error file=$f::no licence file (OFL.txt, LICENSE.txt or UFL.txt) next to it"
               missing=1
             fi
-          done
-          for l in fonts/*/OFL.txt; do
-            if ! grep -qF "$(head -n1 "$l" | tr -d '\r')" fonts/LICENSE-OFL.txt; then
-              echo "::error file=fonts/LICENSE-OFL.txt::doesn't have the copyright line of $l"
+            if [ ! -f "$dir/SOURCE.txt" ]; then
+              echo "::error file=$f::no SOURCE.txt next to it (fetch fonts with shotglass fonts add)"
               missing=1
             fi
           done
@@ -225,7 +222,7 @@ jobs:
         env:
           ANIMATION_FRAMES: bounce+0.541667,bounce+0.958333,bounce+1.291667,bounce+1.775,bounce+2.041667,bounce+2.25,bounce+2.708333,bounce+3.041667
 
-      # Golden picture of tests/text (text/ with every font in fonts/): the title fading
+      # Golden picture of tests/text (text/ with the film's fonts): the title fading
       # in and in full (shadow, glow, outline, gradient ink, the tagline from coverage),
       # the lower third sliding in and in place (baseline alignment, anchoring, edge
       # offsets, kit_text_offset echoes). Larger frames than the other films, so the

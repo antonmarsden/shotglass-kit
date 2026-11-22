@@ -52,27 +52,16 @@ public domain, CC0) is fine if you name its source and licence in the file.
   If the sound is meant to change, re-bless the reference (README, "Audio references"),
   listen to it, and commit it with the change.
 
-## Adding a font
+## Fonts
 
-`fonts/` ships font files, no GLSL. A new family:
-
-- **OFL-1.1 only** (the SIL Open Font License allows embedding and redistribution, also
-  in commercial films). No fonts under other licences, and nothing non-commercial.
-- **Unmodified,** from [google/fonts](https://github.com/google/fonts) (`ofl/<family>/`):
-  no subsetting, no re-saving. A Reserved Font Name only binds *modified* versions, so
-  files shipped as they are can keep their name. Renaming the file is fine (drop the
-  `[wght]` brackets, as for Inter).
-- **One folder per family** (`fonts/<family>/`) with the family's `OFL.txt` from the same
-  place next to the fonts, and a row in [`fonts/README.md`](fonts/README.md) giving the
-  source path and the google/fonts commit.
-- **Small:** a weight or two, no italics unless asked for; scripts with large fonts
-  (CJK) go in a library of their own, so nobody downloads them by accident.
-- **Used by a test film:** name it in `tests/text/movie.toml`'s `[fonts]` and set a
-  block in it. CI fails if a font isn't named by a test film or has no `OFL.txt` beside it.
-
-Adding a font is a patch release; removing or replacing one (even with a newer version
-of the same family, which changes how text sets) is breaking, like changing a function's
-output.
+The kit ships no fonts: films fetch any family from Google Fonts with
+`shotglass fonts add "<Family>"`, which copies the files, their licence and a
+`SOURCE.txt` (repo, commit) into the film's `fonts/` folder and writes its `[fonts]`
+entries (shotglass README, "Getting fonts"). Test films do the same: `tests/text` keeps its
+fonts in `tests/text/fonts/`, fetched at a pinned google/fonts commit (`--rev`) and
+committed, so CI never touches the network. CI checks that every font under a test
+film's `fonts/` is named by its `movie.toml` and has a licence file and `SOURCE.txt`
+beside it. Keep test fonts to the styles the film uses.
 
 ## Adding a transition
 
@@ -102,7 +91,7 @@ picture" step of [`ci.yml`](.github/workflows/ci.yml); add one if you add a scen
 `tests/animation` (core/animate.glsl) has its own reference, `tests/golden/animation.png`,
 checked the same way by the "Animation film matches its golden picture" step, so a change
 to an animation helper doesn't touch `film.png`; everything below applies to it too.
-Likewise `tests/text` (text/ and fonts/) and `tests/golden/text.png`, checked by the "Text
+Likewise `tests/text` (text/, with its own fonts) and `tests/golden/text.png`, checked by the "Text
 film matches its golden picture" step.
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
