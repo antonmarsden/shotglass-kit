@@ -1,7 +1,8 @@
 # The project file for the kit's own test films (tests/*): they use the libraries in
-# this checkout, so they never download anything. Films that use the kit declare it
-# with a source instead (README, "Using it in a film"); this file never reaches them,
-# because a library is only its own folder (core/, sound/, transitions/, text/, fonts/).
+# this checkout. Films that use the kit declare it with a source instead (README, "Using
+# it in a film"); this file never reaches them, because a library is only its own folder
+# (core/, sound/, transitions/, text/). The fonts tests/text uses are Google Fonts
+# families (the kit ships none), fetched at the commit shotglass.lock pins.
 # 0.1.3: text blocks ([fonts], [texts], iChannelMeta) for tests/text.
 shotglass = "0.1.3"
 
@@ -10,4 +11,6 @@ kit = { path = "core", version = "0.1" }
 sound = { path = "sound", version = "0.1" }
 transitions = { path = "transitions", version = "0.1" }
 text = { path = "text", version = "0.1" }
-fonts = { path = "fonts", version = "0.1" }
+bungee = { google = "Bungee" }
+inter = { google = "Inter" }
+atkinsonhyperlegible = { google = "Atkinson Hyperlegible" }

@@ -12,7 +12,6 @@ Each folder is a separate library that a film picks (and pins) on its own:
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
 | [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
-| [`fonts/`](fonts) | `shotglass-kit/fonts` | OFL-1.1 fonts, unmodified from Google Fonts: Inter (variable), Atkinson Hyperlegible (regular, bold), Bungee (display) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
@@ -29,7 +28,6 @@ kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 text = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
-fonts = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "fonts" }
 ```
 
 ```glsl
@@ -68,14 +66,27 @@ Every transition lists its parameters at the top of its file.
 
 shotglass sets the words of a `[texts]` block into a texture (coverage, and a signed
 distance field for crisp edges) and binds it to an `iChannel`; `text/block.glsl` draws it.
-Fonts can come from `fonts/` (OFL-1.1; see [fonts/README.md](fonts/README.md)) or the
-film's own folder. Needs `shotglass = "0.1.3"` in `shotglass.toml`.
+Needs `shotglass = "0.1.3"` in `shotglass.toml`.
+
+The kit ships no fonts: any Google Fonts family is a library of its own (see shotglass's
+README, "Getting fonts"). `shotglass fonts add` declares it, fetches it and pins it:
+
+```sh
+shotglass fonts add "Bungee" "Inter"
+```
 
 ```toml
-# movie.toml
+# shotglass.toml (written by fonts add)
+[libraries]
+bungee = { google = "Bungee" }
+inter = { google = "Inter" }
+```
+
+```toml
+# movie.toml (fonts add writes the [fonts] entries; rename them or add variations)
 [fonts]
-title = { file = "<fonts/bungee/Bungee-Regular.ttf>" }
-body = { file = "<fonts/inter/Inter-Variable.ttf>", variations = { wght = 450 } }
+title = "<bungee/Bungee-Regular.ttf>"
+body = { file = "<inter/Inter[opsz,wght].ttf>", variations = { wght = 450 } }
 
 [texts]
 title = { text = "Big Shadow", font = "title", size = 128, sdf_spread = 16 }
@@ -245,8 +256,9 @@ uses every transition; [`tests/sound`](tests/sound) and
 [`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
-bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` and every
-font in `fonts/`. They use the libraries in this checkout, declared once in the
+bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
+Google Fonts families (declared in the kit's `shotglass.toml`, pinned in its
+`shotglass.lock`). They use the libraries in this checkout, declared once in the
 [`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
 never download anything:
 
@@ -257,7 +269,7 @@ shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
-shotglass play tests/text                   # the text library and fonts
+shotglass play tests/text                   # the text library
 shotglass test tests/unit                   # unit and property tests, on your GPU
 ```
 

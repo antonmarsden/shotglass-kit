@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "75ba3df298d49e9221501d5365b7bcbce24273d0"
+  SHOTGLASS_REV: "12ab9e93395cc03f6f20ea30aef93e8cb49bc4bb"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -56,7 +56,6 @@ jobs:
 
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
-      # fonts/ has no GLSL; the next step but one checks its fonts instead.
       - name: Library list
         run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text' >> "$GITHUB_ENV"
 
@@ -75,31 +74,15 @@ jobs:
           done
           exit $missing
 
-      # fonts/: every font is named by a test film (as "<fonts/...>"), has the family's
-      # OFL.txt next to it, and the library declares OFL-1.1. LICENSE-OFL.txt carries
-      # every family's copyright line (bundle/freeze copy LICENSE* files, not OFL.txt).
-      - name: Every font is used by a test film and carries its licence
+      # The kit ships no fonts: test films use Google Fonts families declared as libraries
+      # in shotglass.toml and pinned in shotglass.lock (shotglass fetches them).
+      - name: No font files in the kit
         run: |
-          missing=0
-          grep -qF '"OFL-1.1"' fonts/library.toml || { echo "::error file=fonts/library.toml::licences must list OFL-1.1"; missing=1; }
-          for f in $(find fonts -name '*.ttf' -o -name '*.otf' | sort); do
-            ref="<${f}>"
-            if ! grep -rqF --include=movie.toml "$ref" tests; then
-              echo "::error file=$f::no test film's movie.toml names it (add a [fonts] entry: file = \"$ref\")"
-              missing=1
-            fi
-            if [ ! -f "$(dirname "$f")/OFL.txt" ]; then
-              echo "::error file=$f::no OFL.txt next to it"
-              missing=1
-            fi
-          done
-          for l in fonts/*/OFL.txt; do
-            if ! grep -qF "$(head -n1 "$l" | tr -d '\r')" fonts/LICENSE-OFL.txt; then
-              echo "::error file=fonts/LICENSE-OFL.txt::doesn't have the copyright line of $l"
-              missing=1
-            fi
-          done
-          exit $missing
+          found=$(git ls-files '*.ttf' '*.otf' '*.ttc' '*.TTF' '*.OTF' '*.TTC')
+          if [ -n "$found" ]; then
+            for f in $found; do echo "::error file=$f::declare Google Fonts families in shotglass.toml (shotglass fonts add) instead of committing font files"; done
+            exit 1
+          fi
 
       # CONVENTIONS.md §6: calling it, not just including the file.
       - name: Every public function is called by a test film
@@ -225,7 +208,7 @@ jobs:
         env:
           ANIMATION_FRAMES: bounce+0.541667,bounce+0.958333,bounce+1.291667,bounce+1.775,bounce+2.041667,bounce+2.25,bounce+2.708333,bounce+3.041667
 
-      # Golden picture of tests/text (text/ with every font in fonts/): the title fading
+      # Golden picture of tests/text (text/ with Google Fonts families): the title fading
       # in and in full (shadow, glow, outline, gradient ink, the tagline from coverage),
       # the lower third sliding in and in place (baseline alignment, anchoring, edge
       # offsets, kit_text_offset echoes). Larger frames than the other films, so the
