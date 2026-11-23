@@ -11,6 +11,8 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
+| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
+| [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
 | [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
@@ -28,6 +30,8 @@ kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 text = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
+fx = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "fx" }
+blend = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "blend" }
 ```
 
 ```glsl
@@ -61,6 +65,116 @@ transition = { type = "fx/iris.glsl", duration = 0.8, params = { center = [0.3, 
 ```
 
 Every transition lists its parameters at the top of its file.
+
+### Layers: fx and blend
+
+A [layer](https://github.com/antonmarsden/shotglass#layers) is drawn over the shots. `fx/`
+holds ready-made layer passes, named like a transition (`type = "fx/<name>"`); `blend/`
+holds blend modes (`blend = "blend/<name>"`). Each file's header lists its channels,
+uniforms and params. Animatable inputs are uniforms (`uniforms.uExposure = { keys = ... }`),
+static options are `params`; anything a film leaves out has a default.
+
+```toml
+[[layer]]
+id = "grade"
+type = "fx/grade"                # exposure, lift and gain, contrast, saturation
+channels = ["@input"]            # the picture below (filters read it on iChannel0)
+params = { lift = [0.02, 0.0, 0.04] }
+uniforms.uExposure = { keys = [[0, -2.0], [3, 0.0]] }
+
+[[layer]]
+id = "grain"
+type = "fx/grain"
+channels = ["@input"]
+scale = 0.5                      # grain is one layer pixel: half resolution, twice as coarse
+opacity = 0.6
+
+[[layer]]
+id = "bars"
+type = "fx/letterbox"            # transparent bars, no input needed
+uniforms.uAspect = 2.39
+
+[[layer]]
+id = "bug"
+type = "fx/place"                # a logo bug: any [textures] image, or "@picture"
+channels = ["logo"]
+scale = 1
+params = { anchor = [1.0, 1.0] }
+uniforms.uPos = [0.96, 0.94]
+uniforms.uSize = 0.1
+
+[[layer]]
+id = "leak"
+scene = "layers/leak.glsl"       # your own layer, blended with a kit mode
+blend = "blend/screen"
+opacity = 0.7
+```
+
+`fx/vignette` and `fx/letterbox` write transparent pixels, so they need no channel and
+work with any `blend`; `fx/grade` and `fx/grain` read `@input` and write an opaque
+picture, so a layer's `opacity` is their strength. A pass assumes straight alpha from its
+channel, which is what `[textures]` images and `@picture` give.
+
+**Blend modes** (`blend/<name>`): `multiply`, `screen`, `overlay`, `hardlight`, `add`
+(linear dodge), `darken`, `lighten`, `difference`, `colordodge`, `colorburn`,
+`softlight`. Every one takes the layer premultiplied, as the engine gives it, undoes
+that to get the layer's own colour, applies the mode there, and mixes the result over the
+picture by the layer's coverage x opacity: so a half-transparent layer is half a
+multiply, and nothing under a fully transparent pixel changes. The maths is in
+`blend/modes.glsl` (`kit_blend_multiply(cb, cs)` and so on, `kit_blend_composite` for the
+mixing), so a film-local blend pass can reuse it:
+
+```glsl
+// fx/my_blend.glsl: multiply the dark half of the layer, screen the light half
+#include <blend/modes.glsl>
+vec4 blend(vec2 uv) {
+    vec4 b = getBase(uv), l = getLayer(uv);
+    vec3 cs = kit_blend_source(l);
+    return kit_blend_composite(b, l, mix(kit_blend_multiply(b.rgb, cs), kit_blend_screen(b.rgb, cs), step(0.5, cs.g)));
+}
+```
+
+**Bloom** (needs shotglass 0.1.5) is three layers: a bright pass drawn at `opacity = 0`
+(a hidden helper), a blur across that reads it with `@bright`, and a blur down that
+reads that and is screened (or added, for a hotter glow) over the picture. Run them at
+`scale = 0.5`: a quarter of the cost, and the blur is soft anyway.
+
+```toml
+[[layer]]
+id = "bright"
+type = "fx/bright"
+channels = ["@input"]
+scale = 0.5
+opacity = 0
+uniforms.uThreshold = 0.7
+
+[[layer]]
+id = "across"
+type = "fx/blur"
+channels = ["@bright"]
+scale = 0.5
+opacity = 0
+params = { direction = [1.0, 0.0] }
+uniforms.uRadius = 0.03
+
+[[layer]]
+id = "bloom"
+type = "fx/blur"
+channels = ["@across"]
+scale = 0.5
+opacity = 0.8
+blend = "blend/screen"           # or "blend/add"
+params = { direction = [0.0, 1.0] }
+uniforms.uRadius = 0.03
+uniforms.uGain = 2.0
+```
+
+(`fx` and `blend` are the names this snippet gives the libraries; the film-local `fx/iris.glsl` of
+the Transitions section is a file path, which ends in `.glsl`, so the two don't clash.)
+
+A layer reads another only if it comes later in `movie.toml` and the ids are plain
+identifiers (`bright_pass`, not `bright-pass`); give the helper layers the same `from`
+and `to`, because `@<id>` is black while that layer isn't active.
 
 ### Text
 
@@ -256,7 +370,8 @@ uses every transition; [`tests/sound`](tests/sound) and
 [`tests/instruments`](tests/instruments) and [`tests/mix`](tests/mix) are the sound
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
-bar; [`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
+bar; [`tests/layers`](tests/layers) shows every blend mode over one picture and then each fx pass;
+[`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
 Google Fonts families (declared in the kit's `shotglass.toml`, pinned in its
 `shotglass.lock`). They use the libraries in this checkout, declared once in the
 [`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
@@ -264,6 +379,8 @@ never download anything:
 
 ```sh
 shotglass check tests/film --web --no-gpu   # strict GLSL: 3.30 core and ES 3.00
+shotglass check tests/layers --web --no-gpu # fx/ and blend/ (strict too)
+shotglass strip tests/layers --count 8 --out strip.png   # look at the blend modes and fx
 shotglass check tests/film                  # compile on your GPU, render, time
 shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
@@ -303,9 +420,10 @@ To try a working copy in your own film without changing its `shotglass.toml`:
 
 ```sh
 SHOTGLASS_LIB_KIT=../shotglass-kit/core shotglass play my-film
+SHOTGLASS_LIB_FX=../shotglass-kit/fx SHOTGLASS_LIB_BLEND=../shotglass-kit/blend shotglass play my-film
 ```
 
-CI runs the strict check, renders the films on Mesa, compares the test, animation and text films with their
+CI runs the strict check, renders the films on Mesa, compares the test, animation, text and layers films with their
 golden pictures and the audio references, checks that every transition starts exactly on
 the old shot and ends exactly on the new one, and fails if any library file isn't included by a test film or a public function
 isn't called by one. A daily canary runs the same checks against shotglass `main`

@@ -29,7 +29,7 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`): CI
+- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`; `tests/layers` for `fx/` and `blend/`): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /
@@ -78,6 +78,27 @@ locally with `xvfb-run -a .github/transition-endpoints.sh` (plain on Windows/mac
 Git Bash there); on a failure, `transition-endpoints/endpoints.diff.png` marks the wrong
 pixels in magenta, one row per transition, start on the left, end on the right.
 
+## Adding an fx pass or a blend mode
+
+An `fx/` pass is a layer shader: `mainImage` writes straight alpha, reading the picture
+below on `iChannel0` when the film gives it `channels = ["@input"]`. Put the maths in a
+`kit_fx_` function in `fx/ops.glsl` (unit tests can't include a file that reads
+`iChannel0`); the pass file is its header, `#include "ops.glsl"`, defaults, and a short
+`mainImage`. Animatable inputs are uniforms (`uAmount`) with `#ifndef SG_HAS_<name>`
+defaults; static options are `#define` params with `#ifndef` defaults, named so they
+don't clash with anything in `ops.glsl` (CONVENTIONS.md §1).
+
+A blend mode is a function `kit_blend_<mode>(cb, cs)` in `blend/modes.glsl` on straight
+colour, plus a pass `blend/<mode>.glsl`: `getBase`, `getLayer`, `kit_blend_source`,
+`kit_blend_composite`, as the existing ones. Don't unpremultiply or mix anywhere else.
+
+Add a layer for it to `tests/layers/movie.toml` (a second of film, in the order the
+header comment lists), unit-test its function in `tests/unit/fx` or `tests/unit/blend`,
+run `shotglass check tests/layers --web --no-gpu`, look at the strip, and re-bless
+`tests/golden/layers.png` (below). A new folder starts at version 0.1.0 in its
+`library.toml`; `requires_shotglass` is the engine release that has the layer feature it
+uses.
+
 ## Golden picture
 
 CI renders eight frames of `tests/film` on Mesa (llvmpipe) and compares them with
@@ -91,7 +112,9 @@ picture" step of [`ci.yml`](.github/workflows/ci.yml); add one if you add a scen
 checked the same way by the "Animation film matches its golden picture" step, so a change
 to an animation helper doesn't touch `film.png`; everything below applies to it too.
 Likewise `tests/text` (text/, with its own fonts) and `tests/golden/text.png`, checked by the "Text
-film matches its golden picture" step.
+film matches its golden picture" step, and `tests/layers` (fx/ and blend/) with
+`tests/golden/layers.png`, checked by the "Layers film matches its golden picture" step
+(18 frames, one per second: each blend mode, then each fx pass).
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
 and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures

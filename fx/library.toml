@@ -1,0 +1,5 @@
+name = "shotglass-kit/fx"
+version = "0.1.0"
+# Layers (0.1.4). The bloom recipe (bright.glsl, blur.glsl) reads @<layer>, which needs 0.1.5.
+requires_shotglass = "0.1.4"
+licences = ["MIT", "Apache-2.0"]

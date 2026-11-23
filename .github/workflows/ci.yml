@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "12ab9e93395cc03f6f20ea30aef93e8cb49bc4bb"
+  SHOTGLASS_REV: "47773ad34f9c57805fd0df09a31a9a87937fb240"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -57,19 +57,24 @@ jobs:
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
       - name: Library list
-        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text' >> "$GITHUB_ENV"
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend' >> "$GITHUB_ENV"
 
+      # fx/ and blend/ passes are used by name from a layer (type = "fx/grade", blend =
+      # "blend/screen"), not included; their helper file (ops.glsl, modes.glsl) is
+      # included by the passes.
       - name: Every library file is used by a test film
         run: |
           missing=0
           for entry in $LIBS; do
             lib=${entry%%:*}; prefix=${entry##*:}
             for f in $lib/*.glsl; do
-              inc="#include <$prefix/$(basename "$f")>"
-              if ! grep -rqF --exclude-dir=unit "$inc" tests; then
-                echo "::error file=$f::not included by any test film under tests/ (add: $inc)"
-                missing=1
-              fi
+              name=$(basename "$f" .glsl)
+              inc="#include <$prefix/$name.glsl>"
+              if grep -rqF --exclude-dir=unit "$inc" tests; then continue; fi
+              if grep -rqE --include=movie.toml "\"$prefix/$name\"" tests; then continue; fi
+              if grep -lF "#include \"$name.glsl\"" $lib/*.glsl > /dev/null 2>&1; then continue; fi
+              echo "::error file=$f::not used by any test film under tests/ (add: $inc, or a layer with \"$prefix/$name\")"
+              missing=1
             done
           done
           exit $missing
@@ -84,10 +89,20 @@ jobs:
             exit 1
           fi
 
-      # CONVENTIONS.md §6: calling it, not just including the file.
+      # CONVENTIONS.md §6: calling it, not just including the file. The functions in fx/
+      # and blend/ are called by the passes (another file of the same library), which
+      # tests/layers draws.
       - name: Every public function is called by a test film
         run: |
           missing=0
+          for f in fx/*.glsl blend/*.glsl; do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+              if ! grep -lE "\b$fn *\(" "$(dirname "$f")"/*.glsl | grep -qvxF "$f"; then
+                echo "::error file=$f::$fn is never called by a pass in its library"
+                missing=1
+              fi
+            done
+          done
           for f in core/*.glsl sound/*.glsl text/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
@@ -104,7 +119,7 @@ jobs:
       - name: Every public function has a unit test
         run: |
           missing=0
-          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl); do
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl); do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
@@ -164,6 +179,7 @@ jobs:
           shotglass check tests/mix --web --no-gpu
           shotglass check tests/transitions --web --no-gpu
           shotglass check tests/text --web --no-gpu
+          shotglass check tests/layers --web --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
@@ -180,6 +196,7 @@ jobs:
           xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/mix --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/text --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/layers --size 320x180 --frames 1
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change
@@ -221,6 +238,18 @@ jobs:
         env:
           TEXT_FRAMES: title+0.5,title+2.5,lower-third+0.4,lower-third+2.5
 
+      # Golden picture of tests/layers (fx/ and blend/): the 11 blend modes over the same
+      # picture and swatch (one second each), then grade, grain, vignette, letterbox,
+      # place and the bloom recipe with screen and with add. Same tolerance and update
+      # steps as above. Moving SHOTGLASS_REV can change it: the engine does the compositing.
+      - name: Layers film matches its golden picture
+        run: |
+          mkdir -p golden-out
+          xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 4 --out golden-out/layers.png \
+            --at "$LAYERS_FRAMES" --compare tests/golden/layers.png
+        env:
+          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5
+
       # Every kit transition, with and without parameters, starts exactly on the old shot
       # and ends exactly on the new one (zero tolerance). The engine's own selftest checks
       # this with fixture transitions; this checks the kit's. See the script's header.
@@ -247,6 +276,7 @@ jobs:
             golden-out/film.png
             golden-out/animation.png
             golden-out/text.png
+            golden-out/layers.png
           if-no-files-found: ignore
       # The actual renders next to their diffs: <name>.diff.png (magenta = differs),
       # <name>.diff.wav, and transitions/ (expected.png, endpoints.png, endpoints.diff.png).
