@@ -14,7 +14,7 @@ Each folder is a separate library that a film picks (and pins) on its own:
 | [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
 | [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
 | [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
-| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6) |
+| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6 at commit `efaac0f` or later, for `notMeasured()`) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
@@ -318,8 +318,8 @@ params and typical limits.
 | `picture/exposure` | clipped highlights, crushed blacks | 1 where the brightest channel is at full scale (or at 0) | `mean` |
 | `picture/palette` | conformance to declared colours (`PALETTE`) | ΔE (CIE76) to the nearest palette colour | `over` a ΔE `threshold` |
 | `picture/shimmer` | crawl, sparkle, flicker | largest channel of frame − mean of `@prev` and `@next` | `mean` |
-| `picture/stepping` | holds between steps on twos/threes (`STEP`) | change from `@prev` on frames between steps | `max` |
-| `picture/outlines` | line width in screen space (`WIDTH`) | ink thickness − WIDTH, in pixels | `over` or `p99` |
+| `picture/stepping` | holds between steps on twos/threes (`STEP`) | change from `@prev` on frames between steps (step frames not measured) | `max` |
+| `picture/outlines` | line width in screen space (`WIDTH`) | ink thickness − WIDTH, in pixels (ink pixels only) | `over` or `p95` |
 | `picture/flatness` | toon shading: no soft gradients | 1 in a steady ramp of 0.75-16 levels/pixel | `mean` |
 | `sound/clicks` (`[[sound.metric]]`) | discontinuities, cuts mid-wave | jump in slope over its local RMS, a ratio | `max` |
 
@@ -442,7 +442,7 @@ shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
 shotglass play tests/text                   # the text library
-shotglass test tests/unit                   # unit and property tests, on your GPU
+shotglass test tests/unit                   # unit and property tests and quality metric tests, on your GPU
 ```
 
 [`tests/unit`](tests/unit) holds unit and property tests of what each function's header
@@ -452,6 +452,10 @@ engine's `expect*` assertions. Where the test films show that something looks an
 right, these pin the contract: exact endpoints, ranges, identities (sRGB round trip, an
 octave doubles), hashes bit for bit against CPU-computed values, SDFs that never change
 faster than the point moves, notes silent from their documented end.
+[`tests/unit/quality`](tests/unit/quality) also holds the `quality/` metrics' must-pass
+and must-fail cases (`picture.test.toml`, `sound.test.toml`: each metric run on small
+input shaders in `fixtures/`, judged by limits like a film's `quality.toml`), so a metric
+that stops seeing what it measures turns CI red.
 
 ### Audio references
 
