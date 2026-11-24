@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "47773ad34f9c57805fd0df09a31a9a87937fb240"
+  SHOTGLASS_REV: "efaac0ffd43e8509747d9efb63aab995c0b49274"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -57,23 +57,26 @@ jobs:
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
       - name: Library list
-        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend' >> "$GITHUB_ENV"
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend quality:quality' >> "$GITHUB_ENV"
 
       # fx/ and blend/ passes are used by name from a layer (type = "fx/grade", blend =
-      # "blend/screen"), not included; their helper file (ops.glsl, modes.glsl) is
-      # included by the passes.
+      # "blend/screen"), and quality/ metrics from a metric test (tests/unit/quality/
+      # *.test.toml: use = "quality/picture/alias"), not included; their helper file (ops.glsl, modes.glsl) is
+      # included by the passes and metrics.
       - name: Every library file is used by a test film
         run: |
           missing=0
           for entry in $LIBS; do
             lib=${entry%%:*}; prefix=${entry##*:}
-            for f in $lib/*.glsl; do
-              name=$(basename "$f" .glsl)
+            # quality/ keeps its metrics in picture/ and sound/: "quality/picture/alias".
+            for f in $lib/*.glsl $lib/*/*.glsl; do
+              [ -e "$f" ] || continue
+              name=${f#$lib/}; name=${name%.glsl}
               inc="#include <$prefix/$name.glsl>"
               if grep -rqF --exclude-dir=unit "$inc" tests; then continue; fi
-              if grep -rqE --include=movie.toml "\"$prefix/$name\"" tests; then continue; fi
-              if grep -lF "#include \"$name.glsl\"" $lib/*.glsl > /dev/null 2>&1; then continue; fi
-              echo "::error file=$f::not used by any test film under tests/ (add: $inc, or a layer with \"$prefix/$name\")"
+              if grep -rqE --include=movie.toml --include='*.test.toml' "\"$prefix/$name\"" tests; then continue; fi
+              if grep -rlF --include='*.glsl' -e "#include \"$name.glsl\"" -e "#include \"../$name.glsl\"" $lib > /dev/null 2>&1; then continue; fi
+              echo "::error file=$f::not used by any test film under tests/ (add: $inc, a layer with \"$prefix/$name\", or a *.test.toml metric case)"
               missing=1
             done
           done
@@ -91,13 +94,13 @@ jobs:
 
       # CONVENTIONS.md §6: calling it, not just including the file. The functions in fx/
       # and blend/ are called by the passes (another file of the same library), which
-      # tests/layers draws.
+      # tests/layers draws; those in quality/ by the metrics, which tests/unit/quality/*.test.toml runs.
       - name: Every public function is called by a test film
         run: |
           missing=0
-          for f in fx/*.glsl blend/*.glsl; do
+          for f in fx/*.glsl blend/*.glsl quality/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
-              if ! grep -lE "\b$fn *\(" "$(dirname "$f")"/*.glsl | grep -qvxF "$f"; then
+              if ! grep -rlE --include='*.glsl' "\b$fn *\(" "$(dirname "$f")" | grep -qvxF "$f"; then
                 echo "::error file=$f::$fn is never called by a pass in its library"
                 missing=1
               fi
@@ -119,7 +122,7 @@ jobs:
       - name: Every public function has a unit test
         run: |
           missing=0
-          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl); do
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
@@ -160,9 +163,10 @@ jobs:
                 missing=1
               fi
             done
-            for f in $lib/*.glsl; do
-              if ! grep -qE '^// sound: (yes|mix only|picture only)' "$f"; then
-                echo "::error file=$f::header doesn't say '// sound: yes', '// sound: mix only' or '// sound: picture only'"
+            for f in $lib/*.glsl $lib/*/*.glsl; do
+              [ -e "$f" ] || continue
+              if ! grep -qE '^// sound: (yes|mix only|picture only|metric only)' "$f"; then
+                echo "::error file=$f::header doesn't say '// sound: yes', '// sound: mix only', '// sound: picture only' or '// sound: metric only'"
                 missing=1
               fi
             done
@@ -183,7 +187,9 @@ jobs:
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
-      # strict check (330 and ES 3.00) first. See "Unit tests" in CONTRIBUTING.md.
+      # strict check (330 and ES 3.00) first. See "Unit tests" in CONTRIBUTING.md. Also
+      # the quality/ metric tests (tests/unit/quality/*.test.toml): each metric must pass
+      # its must-pass cases and fail its must-fail ones.
       - name: Unit tests
         run: xvfb-run -a shotglass test tests/unit
 

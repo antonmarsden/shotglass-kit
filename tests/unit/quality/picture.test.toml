@@ -1,0 +1,155 @@
+# quality/picture/*: each metric on a picture it must pass and one it must fail, so a
+# metric can't go blind (or start over-reporting) unnoticed. Inputs are in fixtures/,
+# drawn at `size` and stored at 8 bits like a rendered frame. The comment on each case
+# is what it measured on llvmpipe when its limit was set: keep a wide margin.
+size = "192x108"
+
+# alias: the frame against its 4x4 supersampled reference.
+[[case]]
+name = "alias: rings several pixels wide"
+use = "quality/picture/alias"
+frame = "fixtures/zone-wide.glsl"
+reference = "fixtures/zone-wide-ss.glsl"
+mean = { max = 0.01 }
+
+[[case]]
+name = "alias: rings finer than a pixel (moire)"
+use = "quality/picture/alias"
+frame = "fixtures/zone-fine.glsl"
+reference = "fixtures/zone-fine-ss.glsl"
+expect = "fail"
+mean = { max = 0.01 }
+
+# banding: one-level steps between flat runs.
+[[case]]
+name = "banding: dithered ramp"
+use = "quality/picture/banding"
+frame = "fixtures/ramp-dithered.glsl"
+mean = { max = 0.01 }
+
+[[case]]
+name = "banding: undithered ramp"
+use = "quality/picture/banding"
+frame = "fixtures/ramp.glsl"
+expect = "fail"
+mean = { max = 0.01 }
+
+# exposure: clipped and crushed pixels.
+[[case]]
+name = "exposure: ramp inside the range"
+use = "quality/picture/exposure"
+frame = "fixtures/ramp-inside.glsl"
+mean = { max = 0.001 }
+
+[[case]]
+name = "exposure: ramp blown out and crushed"
+use = "quality/picture/exposure"
+frame = "fixtures/ramp-clipped.glsl"
+expect = "fail"
+mean = { max = 0.001 }
+
+[[case]]
+name = "exposure: LOW = -1 ignores the crushed blacks"
+use = "quality/picture/exposure"
+params = { LOW = -1 }
+frame = "fixtures/ramp-clipped.glsl"
+mean = { min = 0.15, max = 0.25 }    # only the clipped fifth (0.20): blacks counted would be 0.34
+
+# palette: ΔE to the nearest palette colour.
+[[case]]
+name = "palette: every disc in the palette"
+use = "quality/picture/palette"
+params = { PALETTE = ["#1d2b53", "#ff004d", "#fff1e8"] }
+range = [0, 50]
+threshold = 5
+frame = "fixtures/discs.glsl"
+over = { max = 0.04 }
+
+[[case]]
+name = "palette: one disc off the palette"
+use = "quality/picture/palette"
+params = { PALETTE = ["#1d2b53", "#ff004d", "#fff1e8"] }
+range = [0, 50]
+threshold = 5
+frame = "fixtures/discs-green.glsl"
+expect = "fail"
+over = { max = 0.04 }
+
+# shimmer: the frame against the mean of the frames either side.
+[[case]]
+name = "shimmer: a soft blob drifting"
+use = "quality/picture/shimmer"
+frame = "fixtures/blob.glsl"
+prev = "fixtures/blob-prev.glsl"
+next = "fixtures/blob-next.glsl"
+mean = { max = 0.005 }
+
+[[case]]
+name = "shimmer: fine stripes crawling"
+use = "quality/picture/shimmer"
+frame = "fixtures/stripes.glsl"
+prev = "fixtures/stripes-prev.glsl"
+next = "fixtures/stripes-next.glsl"
+expect = "fail"
+mean = { max = 0.005 }
+
+# stepping: metric tests run at frame 0, so OFFSET = 1 makes it a frame between steps.
+[[case]]
+name = "stepping: held between steps"
+use = "quality/picture/stepping"
+params = { STEP = 2, OFFSET = 1 }
+frame = "fixtures/disc.glsl"
+prev = "fixtures/disc.glsl"
+max = { max = 0.004 }
+
+[[case]]
+name = "stepping: moved between steps (on ones)"
+use = "quality/picture/stepping"
+params = { STEP = 2, OFFSET = 1 }
+frame = "fixtures/disc.glsl"
+prev = "fixtures/disc-moved.glsl"
+expect = "fail"
+max = { max = 0.004 }
+
+[[case]]
+name = "stepping: a step frame isn't measured"
+use = "quality/picture/stepping"
+params = { STEP = 2, OFFSET = 0 }
+frame = "fixtures/disc.glsl"
+prev = "fixtures/disc-moved.glsl"
+expect = "fail"                      # nothing measured, so the max is missing
+max = { max = 0.004 }
+
+# outlines: ink thickness against WIDTH, on ink pixels only.
+[[case]]
+name = "outlines: a ring 4 px wide all round"
+use = "quality/picture/outlines"
+params = { WIDTH = 0.037037 }        # 4 px at 108
+range = [0, 8]
+threshold = 1.5
+frame = "fixtures/ring.glsl"
+over = { max = 0.05 }
+
+[[case]]
+name = "outlines: a ring swelling from 1.5 to 8 px"
+use = "quality/picture/outlines"
+params = { WIDTH = 0.037037 }
+range = [0, 8]
+threshold = 1.5
+frame = "fixtures/ring-swelling.glsl"
+expect = "fail"
+over = { max = 0.05 }
+
+# flatness: soft shading ramps.
+[[case]]
+name = "flatness: toon-shaded ball"
+use = "quality/picture/flatness"
+frame = "fixtures/ball-toon.glsl"
+mean = { max = 0.01 }
+
+[[case]]
+name = "flatness: smoothly shaded ball"
+use = "quality/picture/flatness"
+frame = "fixtures/ball-smooth.glsl"
+expect = "fail"
+mean = { max = 0.01 }

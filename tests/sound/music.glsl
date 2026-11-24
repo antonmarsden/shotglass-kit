@@ -5,6 +5,9 @@
 #include <sound/envelope.glsl>
 #include <sound/note.glsl>
 #include <sound/tempo.glsl>
+// quality/ops.glsl is sound-safe maths (the clicks metric uses it): compiled here as
+// sound, not called.
+#include <quality/ops.glsl>
 
 const int BPM = 120;
 const float BPM_F = 120.0;

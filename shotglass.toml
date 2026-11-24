@@ -5,7 +5,8 @@
 # families (the kit ships none), fetched at the commit shotglass.lock pins.
 # 0.1.3: text blocks ([fonts], [texts], iChannelMeta) for tests/text.
 # 0.1.5: layers, blend modes and "@<layer>" channels for tests/layers (fx/, blend/).
-shotglass = "0.1.5"
+# 0.1.6: `shotglass quality` (picture and sound metrics) for tests/quality (quality/).
+shotglass = "0.1.6"
 
 [libraries]
 kit = { path = "core", version = "0.1" }
@@ -14,6 +15,7 @@ transitions = { path = "transitions", version = "0.1" }
 text = { path = "text", version = "0.1" }
 fx = { path = "fx", version = "0.1" }
 blend = { path = "blend", version = "0.1" }
+quality = { path = "quality", version = "0.1" }
 bungee = { google = "Bungee" }
 inter = { google = "Inter" }
 atkinsonhyperlegible = { google = "Atkinson Hyperlegible" }
