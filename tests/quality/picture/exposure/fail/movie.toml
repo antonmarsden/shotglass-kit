@@ -1,0 +1,9 @@
+# quality/picture/exposure, must fail: a ramp blown out at the top and crushed at the bottom
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/picture/exposure fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

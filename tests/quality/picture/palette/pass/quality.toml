@@ -1,0 +1,8 @@
+count = 2
+
+[[metric]]
+use = "quality/picture/palette"
+params = { PALETTE = ["#1d2b53", "#ff004d", "#fff1e8"] }
+range = [0, 50]
+threshold = 5
+over = { max = 0.03 }    # in palette: 1.4% (antialiased edges); a green disc: 8.3%

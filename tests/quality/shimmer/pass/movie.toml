@@ -1,9 +1,0 @@
-# quality/shimmer, must pass: a soft blob drifting slowly
-# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
-title = "quality/shimmer pass"
-aspect = [16, 9]
-
-[[shot]]
-id = "pass"
-scene = "scenes/scene.glsl"
-duration = 2

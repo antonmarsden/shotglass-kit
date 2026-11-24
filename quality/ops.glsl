@@ -24,7 +24,9 @@ float kit_q_luma(vec3 col) { return dot(col, vec3(0.2126, 0.7152, 0.0722)); }
 
 // kit_q_lab(col): CIE L*a*b* (D65 white) of an sRGB display colour.
 //   col  display colour, 0..1 (clamped)
-//   ->   (L* 0..100, a*, b* about -128..128)
+//   ->   (L* 0..100, a*, b* about -128..128). The distance between two is CIE76 ΔE*ab:
+//        about 1 is the smallest difference seen side by side, 2-3 a near match, 10
+//        plainly different, 100 black against white
 //   cost: 3 pow
 //   e.g. vec3 lab = kit_q_lab(vec3(1.0));   // (100, 0, 0)
 vec3 kit_q_lab(vec3 col) {
@@ -38,15 +40,6 @@ vec3 kit_q_lab(vec3 col) {
                  step(0.008856, xyz));
     return vec3(116.0 * f.y - 16.0, 500.0 * (f.x - f.y), 200.0 * (f.y - f.z));
 }
-
-// kit_q_delta_e(a, b): CIE76 colour difference ΔE*ab between two display colours: about
-// 1 is the smallest difference a viewer sees side by side, 2-3 a near match, 10 plainly
-// different, 100 black against white.
-//   a, b  display colours, 0..1
-//   ->    0..about 260
-//   cost: 2 kit_q_lab
-//   e.g.  float de = kit_q_delta_e(vec3(0.5), vec3(0.52));   // about 1.6
-float kit_q_delta_e(vec3 a, vec3 b) { return length(kit_q_lab(a) - kit_q_lab(b)); }
 
 // kit_q_heat(x): the heatmap ramp the metrics colour with: black, red, yellow, white.
 //   x   0..1 (clamped): 0 is fine, 1 is as bad as the heatmap shows

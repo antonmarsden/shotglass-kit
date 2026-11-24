@@ -101,20 +101,20 @@ uses.
 
 ## Adding a quality metric
 
-A picture metric (`quality/<name>.glsl`) defines `void mainMetric(out vec4 value, in
+A picture metric (`quality/picture/<name>.glsl`, used as `quality/picture/<name>`) defines `void mainMetric(out vec4 value, in
 vec2 fragCoord)`: `value.a` the per-pixel measure, `value.rgb` its heatmap colour
 (`kit_q_heat`). It reads `getFrame`, `getReference`, `getPrev`, `getNext` (shotglass
-README, "Quality metrics"). A sound metric defines `void mainSoundMetric(out float
+README, "Quality metrics"). A sound metric (`quality/sound/<name>.glsl`) defines `void mainSoundMetric(out float
 value, in int samp)` reading `getSound`, and says `// sound: metric only`. Params are
 `#define`s with `#ifndef` defaults, in capitals so they can't rewrite anything in
 `ops.glsl` (numbers arrive as floats). The header says what it measures, the units,
 each param, typical limits, the variants it reads and its cost.
 
 Put the maths in a `kit_q_` function in `quality/ops.glsl` and unit-test it in
-`tests/unit/quality/ops.test.glsl`: the metric files read the engine's samplers, which
+`tests/unit/quality/ops.test.glsl`: the metric files (which include it as `"../ops.glsl"`) read the engine's samplers, which
 unit tests don't have. Test what it must catch **and** what it must let through.
 
-Every metric has two fixture films, `tests/quality/<name>/pass` and `.../fail`, each a
+Every metric has two fixture films, `tests/quality/<picture|sound>/<name>/pass` and `.../fail`, each a
 tiny film with a `quality.toml` using only that metric: the pass film must pass its
 limits and the fail film must break them (on the limits, with valid measures, not on an
 error). That's what stops a metric going blind. Run them all with:

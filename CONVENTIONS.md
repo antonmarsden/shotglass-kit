@@ -154,7 +154,7 @@ So:
   the header how far back each function reads (`reads: up to ... seconds back`).
   No feedback either (§3): an echo is a sum of fixed taps, never a reading of the
   mix's own output.
-- **Sound metrics** (`quality/`, `// sound: metric only`) run in `shotglass quality`'s
+- **Sound metrics** (`quality/sound/`, `// sound: metric only`) run in `shotglass quality`'s
   sound metric shader, reading the soundtrack with `getSound(samp)`; they follow the
   sound-safe rules but are never included by music or a mix.
 - **Sound output** is `vec2` (left, right) in -1..1. Library sound functions return a
@@ -182,7 +182,7 @@ So:
   every public function is called from `tests/unit/`, except in mix-only files (they
   read the mix's buses, which only a mix shader has; `tests/mix` covers them).
 - **Quality metrics fail when they should.** Each `quality/` metric has a pass and a
-  fail fixture film under `tests/quality/<metric>/`; CI runs `shotglass quality` on both
+  fail fixture film under `tests/quality/<picture|sound>/<metric>/`; CI runs `shotglass quality` on both
   (`.github/quality-fixtures.sh`) and fails unless the first passes and the second breaks
   its limits.
 - **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,

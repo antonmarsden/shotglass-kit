@@ -1,5 +1,0 @@
-count = 2
-
-[[metric]]
-use = "quality/shimmer"
-mean = { max = 0.005 }

@@ -43,17 +43,14 @@ void test_lab_greys_are_neutral(float t) {
     expect(kit_q_lab(vec3(min(t + 0.01, 1.0))).x >= lab.x);
 }
 
-// kit_q_delta_e: 0 for the same colour, symmetric, 100 from black to white, and one
-// 8-bit level of mid grey is under 1 (invisible) while a palette swap is far over.
-void test_delta_e(vec3 c) {
-    expect_near(kit_q_delta_e(c, c), 0.0, 1e-4);
-    expect_near(kit_q_delta_e(c, c.yzx), kit_q_delta_e(c.yzx, c), 1e-3);
-}
+// Lab distance is ΔE (CIE76), as the header says: 100 from black to white, one 8-bit
+// level of mid grey under 1 (invisible), a palette swap far over.
+float de(vec3 a, vec3 b) { return length(kit_q_lab(a) - kit_q_lab(b)); }
 
-void test_delta_e_scale() {
-    expect_near(kit_q_delta_e(vec3(0.0), vec3(1.0)), 100.0, 0.05);
-    expect(kit_q_delta_e(vec3(0.5), vec3(0.5 + 1.0 / 255.0)) < 1.0);
-    expect(kit_q_delta_e(vec3(1.0, 0.0, 0.302), vec3(0.0, 0.894, 0.212)) > 50.0);
+void test_lab_distance_is_delta_e() {
+    expect_near(de(vec3(0.0), vec3(1.0)), 100.0, 0.05);
+    expect(de(vec3(0.5), vec3(0.5 + 1.0 / 255.0)) < 1.0);
+    expect(de(vec3(1.0, 0.0, 0.302), vec3(0.0, 0.894, 0.212)) > 50.0);
 }
 
 // kit_q_heat: black at 0, white at 1, clamped, and never darker as x climbs.

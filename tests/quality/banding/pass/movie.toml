@@ -1,9 +1,0 @@
-# quality/banding, must pass: a slow ramp, dithered by one level
-# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
-title = "quality/banding pass"
-aspect = [16, 9]
-
-[[shot]]
-id = "pass"
-scene = "scenes/scene.glsl"
-duration = 2

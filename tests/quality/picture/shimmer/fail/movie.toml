@@ -1,0 +1,9 @@
+# quality/picture/shimmer, must fail: fine stripes sliding, point-sampled, crawling
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/picture/shimmer fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

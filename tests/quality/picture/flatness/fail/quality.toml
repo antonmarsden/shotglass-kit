@@ -1,0 +1,5 @@
+count = 2
+
+[[metric]]
+use = "quality/picture/flatness"
+mean = { max = 0.01 }

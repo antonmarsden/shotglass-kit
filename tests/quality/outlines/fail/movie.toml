@@ -1,9 +1,0 @@
-# quality/outlines, must fail: a ring whose line swells from 1.5 to 8 px
-# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
-title = "quality/outlines fail"
-aspect = [16, 9]
-
-[[shot]]
-id = "fail"
-scene = "scenes/scene.glsl"
-duration = 2

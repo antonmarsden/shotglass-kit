@@ -1,0 +1,7 @@
+# At 30 fps the four sample frames are 7, 22, 37 and 52: all between steps on twos.
+count = 4
+
+[[metric]]
+use = "quality/picture/stepping"
+params = { STEP = 2 }
+max = { max = 0.004 }

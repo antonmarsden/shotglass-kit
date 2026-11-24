@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The quality/ metrics' fixtures (CONTRIBUTING.md, "Adding a quality metric"): every
-# tests/quality/<metric>/pass film must pass `shotglass quality`, and every
-# tests/quality/<metric>/fail film must fail it on its limits, not on an error (the
+# tests/quality/<kind>/<metric>/pass film must pass `shotglass quality`, and every
+# tests/quality/<kind>/<metric>/fail film must fail it on its limits, not on an error (the
 # metric ran, measured no NaN/Inf, and a limit was broken). So a metric that goes blind
 # (measures 0 everywhere) or over-reports turns CI red.
 #
@@ -12,10 +12,10 @@ set -u
 out=${1:-quality-fixtures}
 py=$(command -v python3 || command -v python)
 status=0
-for film in tests/quality/*/pass tests/quality/*/fail; do
-  metric=$(basename "$(dirname "$film")")
+for film in tests/quality/*/*/pass tests/quality/*/*/fail; do
+  metric=$(basename "$(dirname "$(dirname "$film")")")/$(basename "$(dirname "$film")")   # picture/alias
   case=$(basename "$film")
-  dir="$out/$metric-$case"
+  dir="$out/${metric/\//-}-$case"
   log=$(shotglass quality "$film" --out "$dir" 2>&1)
   code=$?
   if [ "$case" = pass ]; then

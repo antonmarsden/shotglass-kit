@@ -1,0 +1,6 @@
+count = 2
+reference = 4
+
+[[metric]]
+use = "quality/picture/alias"
+mean = { max = 0.01 }
