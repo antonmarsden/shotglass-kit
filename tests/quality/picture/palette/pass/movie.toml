@@ -1,9 +1,0 @@
-# quality/picture/palette, must pass: every disc in the palette
-# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
-title = "quality/picture/palette pass"
-aspect = [16, 9]
-
-[[shot]]
-id = "pass"
-scene = "scenes/scene.glsl"
-duration = 2

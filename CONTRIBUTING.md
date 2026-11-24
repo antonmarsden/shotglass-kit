@@ -29,7 +29,7 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`; `tests/layers` for `fx/` and `blend/`; `tests/quality` for `quality/`, see "Adding a quality metric"): CI
+- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`; `tests/layers` for `fx/` and `blend/`; `tests/unit/quality/*.test.toml` for `quality/`, see "Adding a quality metric"): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /
@@ -104,7 +104,9 @@ uses.
 A picture metric (`quality/picture/<name>.glsl`, used as `quality/picture/<name>`) defines `void mainMetric(out vec4 value, in
 vec2 fragCoord)`: `value.a` the per-pixel measure, `value.rgb` its heatmap colour
 (`kit_q_heat`). It reads `getFrame`, `getReference`, `getPrev`, `getNext` (shotglass
-README, "Quality metrics"). A sound metric (`quality/sound/<name>.glsl`) defines `void mainSoundMetric(out float
+README, "Quality metrics"). A metric that applies to some pixels only writes
+`value.a = notMeasured()` elsewhere, so its mean and percentiles cover the measured
+ones. A sound metric (`quality/sound/<name>.glsl`) defines `void mainSoundMetric(out float
 value, in int samp)` reading `getSound`, and says `// sound: metric only`. Params are
 `#define`s with `#ifndef` defaults, in capitals so they can't rewrite anything in
 `ops.glsl` (numbers arrive as floats). The header says what it measures, the units,
@@ -114,19 +116,15 @@ Put the maths in a `kit_q_` function in `quality/ops.glsl` and unit-test it in
 `tests/unit/quality/ops.test.glsl`: the metric files (which include it as `"../ops.glsl"`) read the engine's samplers, which
 unit tests don't have. Test what it must catch **and** what it must let through.
 
-Every metric has two fixture films, `tests/quality/<picture|sound>/<name>/pass` and `.../fail`, each a
-tiny film with a `quality.toml` using only that metric: the pass film must pass its
-limits and the fail film must break them (on the limits, with valid measures, not on an
-error). That's what stops a metric going blind. Run them all with:
+Every metric has at least one must-pass and one must-fail case in
+`tests/unit/quality/picture.test.toml` or `sound.test.toml` (shotglass README, "Metric
+tests"): the metric run on fixed inputs from `tests/unit/quality/fixtures/` (small
+`mainImage` or `mainSound` shaders), judged by limits like a film's `quality.toml`. A
+must-fail case has to break a limit with valid measures, not error out. That's what
+stops a metric going blind. `shotglass test tests/unit` runs them with the unit tests.
 
-```sh
-.github/quality-fixtures.sh            # xvfb-run -a on Linux; Git Bash on Windows
-```
-
-Keep a wide margin between the two films' numbers and the limit (the comments in each
-`quality.toml` say what they measured), so llvmpipe and real GPUs agree. Pass `--out`
-when running `shotglass quality` by hand from the kit's root: its default output folder,
-`quality/`, is this library. A change to a metric's numbers changes every film's
+Keep a wide margin between each case's number and its limit (say what it measured in a
+comment), so llvmpipe and real GPUs agree. A change to a metric's numbers changes every film's
 reports: it's a breaking change (CONVENTIONS.md §7), noted in the release.
 
 ## Golden picture

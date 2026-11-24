@@ -349,7 +349,8 @@ threshold = 20
 max = { max = 20 }
 ```
 
-Start with the header's typical limits, run `shotglass quality`, look at the heatmaps,
+Start with the header's typical limits, run `shotglass quality`, look at the heatmaps
+(written to `quality-out/`),
 then let `shotglass quality --tighten` ratchet them. Measured numbers depend on the
 frame size and on the renderer (a little), so tighten with a margin.
 
@@ -442,7 +443,6 @@ shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
 shotglass play tests/text                   # the text library
 shotglass test tests/unit                   # unit and property tests, on your GPU
-.github/quality-fixtures.sh                 # every quality/ metric passes and fails its fixtures
 ```
 
 [`tests/unit`](tests/unit) holds unit and property tests of what each function's header

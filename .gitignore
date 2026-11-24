@@ -7,6 +7,3 @@
 !/tests/golden/*.png
 /golden-out/
 /transition-endpoints/
-/quality-fixtures/
-# `shotglass quality` writes ./quality/ by default, which is the library: never commit its reports
-/quality/*.json

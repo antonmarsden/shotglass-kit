@@ -1,5 +1,0 @@
-count = 2
-
-[[metric]]
-use = "quality/picture/exposure"
-mean = { max = 0.001 }

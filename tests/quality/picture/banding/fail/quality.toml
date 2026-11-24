@@ -1,5 +1,0 @@
-count = 2
-
-[[metric]]
-use = "quality/picture/banding"
-mean = { max = 0.01 }    # dithered: about 0.003 (a few chance flat runs); undithered: 0.065

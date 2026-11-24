@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "7a729400c7d8947d7cf04110a42eeb863aa2d72d"
+  SHOTGLASS_REV: "e253d5a2d13415ef0a02cda5fb0781ea89d04b66"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -60,8 +60,8 @@ jobs:
         run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend quality:quality' >> "$GITHUB_ENV"
 
       # fx/ and blend/ passes are used by name from a layer (type = "fx/grade", blend =
-      # "blend/screen"), and quality/ metrics from a fixture's quality.toml (use =
-      # "quality/picture/alias"), not included; their helper file (ops.glsl, modes.glsl) is
+      # "blend/screen"), and quality/ metrics from a metric test (tests/unit/quality/
+      # *.test.toml: use = "quality/picture/alias"), not included; their helper file (ops.glsl, modes.glsl) is
       # included by the passes and metrics.
       - name: Every library file is used by a test film
         run: |
@@ -74,9 +74,9 @@ jobs:
               name=${f#$lib/}; name=${name%.glsl}
               inc="#include <$prefix/$name.glsl>"
               if grep -rqF --exclude-dir=unit "$inc" tests; then continue; fi
-              if grep -rqE --include=movie.toml --include=quality.toml "\"$prefix/$name\"" tests; then continue; fi
+              if grep -rqE --include=movie.toml --include='*.test.toml' "\"$prefix/$name\"" tests; then continue; fi
               if grep -rlF --include='*.glsl' -e "#include \"$name.glsl\"" -e "#include \"../$name.glsl\"" $lib > /dev/null 2>&1; then continue; fi
-              echo "::error file=$f::not used by any test film under tests/ (add: $inc, a layer with \"$prefix/$name\", or a quality.toml metric)"
+              echo "::error file=$f::not used by any test film under tests/ (add: $inc, a layer with \"$prefix/$name\", or a *.test.toml metric case)"
               missing=1
             done
           done
@@ -94,7 +94,7 @@ jobs:
 
       # CONVENTIONS.md §6: calling it, not just including the file. The functions in fx/
       # and blend/ are called by the passes (another file of the same library), which
-      # tests/layers draws; those in quality/ by the metrics, which tests/quality runs.
+      # tests/layers draws; those in quality/ by the metrics, which tests/unit/quality/*.test.toml runs.
       - name: Every public function is called by a test film
         run: |
           missing=0
@@ -184,11 +184,12 @@ jobs:
           shotglass check tests/transitions --web --no-gpu
           shotglass check tests/text --web --no-gpu
           shotglass check tests/layers --web --no-gpu
-          for film in tests/quality/*/*/*/; do shotglass check "$film" --web --no-gpu; done
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
-      # strict check (330 and ES 3.00) first. See "Unit tests" in CONTRIBUTING.md.
+      # strict check (330 and ES 3.00) first. See "Unit tests" in CONTRIBUTING.md. Also
+      # the quality/ metric tests (tests/unit/quality/*.test.toml): each metric must pass
+      # its must-pass cases and fail its must-fail ones.
       - name: Unit tests
         run: xvfb-run -a shotglass test tests/unit
 
@@ -260,12 +261,6 @@ jobs:
       # this with fixture transitions; this checks the kit's. See the script's header.
       - name: Transition endpoints
         run: xvfb-run -a .github/transition-endpoints.sh golden-out/transitions
-
-      # quality/ metrics on their fixture films (tests/quality/<kind>/<metric>/pass and fail):
-      # each must pass its pass film and fail its fail film on its limits, so a metric
-      # can't go blind. Reports and heatmaps go to golden-out/quality (uploaded on failure).
-      - name: Quality metrics pass and fail their fixtures
-        run: xvfb-run -a .github/quality-fixtures.sh golden-out/quality
 
       # Golden soundtracks (tests/golden/<film>.wav, 8 kHz like the engine's golden tests),
       # rendered on Mesa. Within `wav --compare`'s default tolerance, so real GPUs pass too.

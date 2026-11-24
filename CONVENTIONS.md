@@ -181,10 +181,9 @@ So:
   is the spec; when a test and the code disagree, one of them is wrong. CI checks that
   every public function is called from `tests/unit/`, except in mix-only files (they
   read the mix's buses, which only a mix shader has; `tests/mix` covers them).
-- **Quality metrics fail when they should.** Each `quality/` metric has a pass and a
-  fail fixture film under `tests/quality/<picture|sound>/<metric>/`; CI runs `shotglass quality` on both
-  (`.github/quality-fixtures.sh`) and fails unless the first passes and the second breaks
-  its limits.
+- **Quality metrics fail when they should.** Each `quality/` metric has a must-pass
+  and a must-fail metric test (`tests/unit/quality/*.test.toml`, run by `shotglass test`):
+  the first must hold its limits, the second must break them.
 - **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,
   `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;

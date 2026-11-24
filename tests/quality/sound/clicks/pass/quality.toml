@@ -1,8 +1,0 @@
-# Only [sound]: no frames are rendered.
-[sound]
-
-[[sound.metric]]
-use = "quality/sound/clicks"
-range = [0, 100]
-threshold = 20
-max = { max = 20 }
