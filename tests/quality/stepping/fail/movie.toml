@@ -1,0 +1,9 @@
+# quality/stepping, must fail: animated on ones
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/stepping fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

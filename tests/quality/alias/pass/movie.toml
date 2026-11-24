@@ -1,0 +1,9 @@
+# quality/alias, must pass: rings wide enough to need no antialiasing
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/alias pass"
+aspect = [16, 9]
+
+[[shot]]
+id = "pass"
+scene = "scenes/scene.glsl"
+duration = 2

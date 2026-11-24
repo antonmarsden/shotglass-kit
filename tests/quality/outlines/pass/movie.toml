@@ -1,0 +1,9 @@
+# quality/outlines, must pass: a ring whose line is 4 px wide all round
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/outlines pass"
+aspect = [16, 9]
+
+[[shot]]
+id = "pass"
+scene = "scenes/scene.glsl"
+duration = 2

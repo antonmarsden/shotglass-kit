@@ -1,0 +1,9 @@
+# quality/banding, must fail: the same slow ramp, undithered
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/banding fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

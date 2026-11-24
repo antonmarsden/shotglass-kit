@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "47773ad34f9c57805fd0df09a31a9a87937fb240"
+  SHOTGLASS_REV: "7a729400c7d8947d7cf04110a42eeb863aa2d72d"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -57,11 +57,12 @@ jobs:
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
       - name: Library list
-        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend' >> "$GITHUB_ENV"
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend quality:quality' >> "$GITHUB_ENV"
 
       # fx/ and blend/ passes are used by name from a layer (type = "fx/grade", blend =
-      # "blend/screen"), not included; their helper file (ops.glsl, modes.glsl) is
-      # included by the passes.
+      # "blend/screen"), and quality/ metrics from a fixture's quality.toml (use =
+      # "quality/alias"), not included; their helper file (ops.glsl, modes.glsl) is
+      # included by the passes and metrics.
       - name: Every library file is used by a test film
         run: |
           missing=0
@@ -71,9 +72,9 @@ jobs:
               name=$(basename "$f" .glsl)
               inc="#include <$prefix/$name.glsl>"
               if grep -rqF --exclude-dir=unit "$inc" tests; then continue; fi
-              if grep -rqE --include=movie.toml "\"$prefix/$name\"" tests; then continue; fi
+              if grep -rqE --include=movie.toml --include=quality.toml "\"$prefix/$name\"" tests; then continue; fi
               if grep -lF "#include \"$name.glsl\"" $lib/*.glsl > /dev/null 2>&1; then continue; fi
-              echo "::error file=$f::not used by any test film under tests/ (add: $inc, or a layer with \"$prefix/$name\")"
+              echo "::error file=$f::not used by any test film under tests/ (add: $inc, a layer with \"$prefix/$name\", or a quality.toml metric)"
               missing=1
             done
           done
@@ -91,11 +92,11 @@ jobs:
 
       # CONVENTIONS.md §6: calling it, not just including the file. The functions in fx/
       # and blend/ are called by the passes (another file of the same library), which
-      # tests/layers draws.
+      # tests/layers draws; those in quality/ by the metrics, which tests/quality runs.
       - name: Every public function is called by a test film
         run: |
           missing=0
-          for f in fx/*.glsl blend/*.glsl; do
+          for f in fx/*.glsl blend/*.glsl quality/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -lE "\b$fn *\(" "$(dirname "$f")"/*.glsl | grep -qvxF "$f"; then
                 echo "::error file=$f::$fn is never called by a pass in its library"
@@ -119,7 +120,7 @@ jobs:
       - name: Every public function has a unit test
         run: |
           missing=0
-          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl); do
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
@@ -161,8 +162,8 @@ jobs:
               fi
             done
             for f in $lib/*.glsl; do
-              if ! grep -qE '^// sound: (yes|mix only|picture only)' "$f"; then
-                echo "::error file=$f::header doesn't say '// sound: yes', '// sound: mix only' or '// sound: picture only'"
+              if ! grep -qE '^// sound: (yes|mix only|picture only|metric only)' "$f"; then
+                echo "::error file=$f::header doesn't say '// sound: yes', '// sound: mix only', '// sound: picture only' or '// sound: metric only'"
                 missing=1
               fi
             done
@@ -180,6 +181,7 @@ jobs:
           shotglass check tests/transitions --web --no-gpu
           shotglass check tests/text --web --no-gpu
           shotglass check tests/layers --web --no-gpu
+          for film in tests/quality/*/*/; do shotglass check "$film" --web --no-gpu; done
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
@@ -255,6 +257,12 @@ jobs:
       # this with fixture transitions; this checks the kit's. See the script's header.
       - name: Transition endpoints
         run: xvfb-run -a .github/transition-endpoints.sh golden-out/transitions
+
+      # quality/ metrics on their fixture films (tests/quality/<metric>/pass and fail):
+      # each must pass its pass film and fail its fail film on its limits, so a metric
+      # can't go blind. Reports and heatmaps go to golden-out/quality (uploaded on failure).
+      - name: Quality metrics pass and fail their fixtures
+        run: xvfb-run -a .github/quality-fixtures.sh golden-out/quality
 
       # Golden soundtracks (tests/golden/<film>.wav, 8 kHz like the engine's golden tests),
       # rendered on Mesa. Within `wav --compare`'s default tolerance, so real GPUs pass too.

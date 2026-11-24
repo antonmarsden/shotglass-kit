@@ -140,7 +140,7 @@ So:
 - **Each file says in its header whether it's sound-safe.** A sound-safe file uses no
   derivatives, no implicit-LOD `texture()`, no `gl_FragCoord`, no `discard`, and only
   includes other sound-safe files. Write `// sound: yes` or `// sound: picture only`
-  in the file header (or `// sound: mix only`, below). A test film's music includes
+  in the file header (or `// sound: mix only` / `// sound: metric only`, below). A test film's music includes
   every sound-safe file, so
   glslang rejects a picture uniform in one; derivatives would still compile there
   (sound shaders are fragment shaders too), so CI also greps sound-safe files for
@@ -154,6 +154,9 @@ So:
   the header how far back each function reads (`reads: up to ... seconds back`).
   No feedback either (§3): an echo is a sum of fixed taps, never a reading of the
   mix's own output.
+- **Sound metrics** (`quality/`, `// sound: metric only`) run in `shotglass quality`'s
+  sound metric shader, reading the soundtrack with `getSound(samp)`; they follow the
+  sound-safe rules but are never included by music or a mix.
 - **Sound output** is `vec2` (left, right) in -1..1. Library sound functions return a
   level around ±1 and leave the gain to the caller; they never clip (except
   `kit_soft_clip`, whose job it is).
@@ -178,6 +181,10 @@ So:
   is the spec; when a test and the code disagree, one of them is wrong. CI checks that
   every public function is called from `tests/unit/`, except in mix-only files (they
   read the mix's buses, which only a mix shader has; `tests/mix` covers them).
+- **Quality metrics fail when they should.** Each `quality/` metric has a pass and a
+  fail fixture film under `tests/quality/<metric>/`; CI runs `shotglass quality` on both
+  (`.github/quality-fixtures.sh`) and fails unless the first passes and the second breaks
+  its limits.
 - **Sound has a reference.** Each sound test film's soundtrack (`tests/sound`,
   `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;

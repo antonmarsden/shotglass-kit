@@ -1,0 +1,9 @@
+# quality/alias, must fail: rings finer than a pixel at the edge, point-sampled (moire)
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/alias fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

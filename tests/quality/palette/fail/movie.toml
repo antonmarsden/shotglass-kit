@@ -1,0 +1,9 @@
+# quality/palette, must fail: one disc green, off the palette
+# Run by .github/quality-fixtures.sh (CONTRIBUTING.md, "Adding a quality metric").
+title = "quality/palette fail"
+aspect = [16, 9]
+
+[[shot]]
+id = "fail"
+scene = "scenes/scene.glsl"
+duration = 2

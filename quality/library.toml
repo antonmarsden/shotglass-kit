@@ -1,0 +1,5 @@
+name = "shotglass-kit/quality"
+version = "0.1.0"
+# `shotglass quality` with @prev/@next and [[sound.metric]] (shotglass 0.1.6, #96).
+requires_shotglass = "0.1.6"
+licences = ["MIT", "Apache-2.0"]
