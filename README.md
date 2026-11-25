@@ -56,8 +56,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 `kit_cellular_noise` returns the two nearest feature distances for patterns such
 as stone and scales. `kit_simplex_flow` returns rotating simplex noise and its
-spatial gradient, with optional rectangular tiling. The
-[test film](tests/film/movie.toml) includes a shot for each pattern.
+spatial gradient, with optional rectangular tiling.
+`kit_curl_noise` in `<kit/noise.glsl>` rotates that gradient clockwise to give an
+unnormalised, divergence-free 2D field. Scale it to taste for flow or UV warping.
+Use an even positive y period for tiling, or zero on either axis to disable its
+tiling. This example repeats over the unit UV square and loops every four seconds.
+
+```glsl
+vec2 velocity = kit_curl_noise(uv * vec2(6.0, 4.0), ivec2(6, 4),
+                               6.28318531 * fract(iTime / 4.0));
+```
+
+The [simplex-flow shot](tests/film/scenes/simplex-flow.glsl) uses the field to
+warp two side-by-side tiles and loops once per shot.
 
 For blue-noise dithering, bind the CC0 tile as a data texture in a shot:
 
