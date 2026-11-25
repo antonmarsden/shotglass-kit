@@ -108,6 +108,8 @@ jobs:
           done
           for f in core/*.glsl sound/*.glsl text/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+              # WebGL-compatible private helper listed in CONVENTIONS.md.
+              if [[ "$f:$fn" == "core/sdf_coverage.glsl:kit_sd_coverage_internal" ]]; then continue; fi
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
                 missing=1
@@ -124,6 +126,8 @@ jobs:
           missing=0
           for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+              # WebGL-compatible private helper listed in CONVENTIONS.md.
+              if [[ "$f:$fn" == "core/sdf_coverage.glsl:kit_sd_coverage_internal" ]]; then continue; fi
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
                 missing=1
