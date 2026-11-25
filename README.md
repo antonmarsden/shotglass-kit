@@ -394,8 +394,9 @@ Call both helpers before fragment-dependent branches. They use screen derivative
 estimate how much of a square pixel the locally straight edge covers. Very tight
 curves and cusps can differ from supersampling. For a reference rendered at a higher
 resolution and then downsampled, multiply the outline width by the render scale.
-The `sdf-coverage` shot in `tests/film` shows a moving 0.75 px ring beside a 16×16
-reference sampled within each output pixel.
+The `sdf-coverage` shot in `tests/film` shows the same moving 0.75 px ring and
+outlined disc with point sampling (left), derivative coverage (middle), and 16×16
+supersampling within each output pixel (right).
 
 ### Raymarching
 
