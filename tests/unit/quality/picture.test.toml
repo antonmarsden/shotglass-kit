@@ -153,3 +153,34 @@ use = "quality/picture/flatness"
 frame = "fixtures/ball-smooth.glsl"
 expect = "fail"
 mean = { max = 0.01 }
+
+# llvmpipe: the 0.75 px band has mean alias error 0.000050 and no pixels over 0.10.
+# The point-sampled band puts 1.16% of pixels over 0.10.
+[[case]]
+name = "alias: derivative coverage of a 0.75 px ring"
+use = "quality/picture/alias"
+frame = "fixtures/coverage-ring.glsl"
+reference = "fixtures/coverage-ring-ss.glsl"
+mean = { max = 0.0002 }
+threshold = 0.10
+over = { max = 0.001 }
+
+[[case]]
+name = "alias: point samples of a 0.75 px ring"
+use = "quality/picture/alias"
+frame = "fixtures/coverage-ring-hard.glsl"
+reference = "fixtures/coverage-ring-ss.glsl"
+expect = "fail"
+threshold = 0.10
+over = { max = 0.001 }
+
+# Check width on the 4 px band because thresholded ink runs need full ink pixels.
+# llvmpipe: mean absolute width error is 0.44 px.
+[[case]]
+name = "outlines: derivative coverage of a 4 px ring"
+use = "quality/picture/outlines"
+params = { WIDTH = 0.037037 }
+frame = "fixtures/coverage-ring-wide.glsl"
+range = [0, 8]
+threshold = 1.5
+over = { max = 0.05 }
