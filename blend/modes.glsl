@@ -67,19 +67,19 @@ vec3 kit_blend_lighten(vec3 cb, vec3 cs) { return max(cb, cs); }
 //   e.g. vec3 d = kit_blend_difference(b.rgb, cs);
 vec3 kit_blend_difference(vec3 cb, vec3 cs) { return abs(cb - cs); }
 
-float kit__dodge(float cb, float cs) {
+float kit_private_dodge(float cb, float cs) {
     if (cb <= 0.0) return 0.0;
     if (cs >= 1.0) return 1.0;
     return min(1.0, cb / (1.0 - cs));
 }
 
-float kit__burn(float cb, float cs) {
+float kit_private_burn(float cb, float cs) {
     if (cb >= 1.0) return 1.0;
     if (cs <= 0.0) return 0.0;
     return 1.0 - min(1.0, (1.0 - cb) / cs);
 }
 
-float kit__soft_light(float cb, float cs) {
+float kit_private_soft_light(float cb, float cs) {
     if (cs <= 0.5) return cb - (1.0 - 2.0 * cs) * cb * (1.0 - cb);
     float d = cb <= 0.25 ? ((16.0 * cb - 12.0) * cb + 4.0) * cb : sqrt(cb);
     return cb + (2.0 * cs - 1.0) * (d - cb);
@@ -89,19 +89,19 @@ float kit__soft_light(float cb, float cs) {
 // layer changes nothing, white makes every lit channel white. A black picture stays black.
 //   e.g. vec3 d = kit_blend_colordodge(b.rgb, cs);
 vec3 kit_blend_colordodge(vec3 cb, vec3 cs) {
-    return vec3(kit__dodge(cb.r, cs.r), kit__dodge(cb.g, cs.g), kit__dodge(cb.b, cs.b));
+    return vec3(kit_private_dodge(cb.r, cs.r), kit_private_dodge(cb.g, cs.g), kit_private_dodge(cb.b, cs.b));
 }
 
 // kit_blend_colorburn(cb, cs): darkens the picture by the layer; white in the layer
 // changes nothing, black makes every unlit channel black. A white picture stays white.
 //   e.g. vec3 d = kit_blend_colorburn(b.rgb, cs);
 vec3 kit_blend_colorburn(vec3 cb, vec3 cs) {
-    return vec3(kit__burn(cb.r, cs.r), kit__burn(cb.g, cs.g), kit__burn(cb.b, cs.b));
+    return vec3(kit_private_burn(cb.r, cs.r), kit_private_burn(cb.g, cs.g), kit_private_burn(cb.b, cs.b));
 }
 
 // kit_blend_softlight(cb, cs): a gentle overlay: the layer lightens or darkens the
 // picture but never reaches pure white or black from mid-greys.
 //   e.g. vec3 s = kit_blend_softlight(b.rgb, cs);
 vec3 kit_blend_softlight(vec3 cb, vec3 cs) {
-    return vec3(kit__soft_light(cb.r, cs.r), kit__soft_light(cb.g, cs.g), kit__soft_light(cb.b, cs.b));
+    return vec3(kit_private_soft_light(cb.r, cs.r), kit_private_soft_light(cb.g, cs.g), kit_private_soft_light(cb.b, cs.b));
 }

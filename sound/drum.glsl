@@ -16,7 +16,7 @@
 
 // lowbias32 integer hash, as core/noise.glsl's kit_hash_u (the sound library doesn't
 // depend on core).
-uint kit__drum_hash(uint x) {
+uint kit_private_drum_hash(uint x) {
     x ^= x >> 16;
     x *= 0x7feb352dU;
     x ^= x >> 15;
@@ -26,33 +26,33 @@ uint kit__drum_hash(uint x) {
 }
 
 // White noise point i (-1..1), exact in float32.
-float kit__drum_white(int i, uint seed) {
-    return float(kit__drum_hash(uint(i) ^ seed) >> 8) * (2.0 / 16777216.0) - 1.0;
+float kit_private_drum_white(int i, uint seed) {
+    return float(kit_private_drum_hash(uint(i) ^ seed) >> 8) * (2.0 / 16777216.0) - 1.0;
 }
 
 // Noise at t: 24000 points a second, joined by straight lines. With `high` it takes the
 // difference of neighbouring points instead (high-passed: a brighter hiss). -1..1.
 // t is clamped to 0..60 s, far longer than any hit, so the index stays small.
-float kit__drum_noise(float t, uint seed, bool high) {
+float kit_private_drum_noise(float t, uint seed, bool high) {
     float x = clamp(t, 0.0, 60.0) * 24000.0;
     float fi = floor(x);
     int i = int(fi);
-    float a = kit__drum_white(i, seed), b = kit__drum_white(i + 1, seed);
+    float a = kit_private_drum_white(i, seed), b = kit_private_drum_white(i + 1, seed);
     if (high) {
-        a = 0.5 * (a - kit__drum_white(i - 1, seed));
-        b = 0.5 * (b - kit__drum_white(i, seed));
+        a = 0.5 * (a - kit_private_drum_white(i - 1, seed));
+        b = 0.5 * (b - kit_private_drum_white(i, seed));
     }
     return mix(a, b, x - fi);
 }
 
 // A hit: a smooth rise over `attack` seconds (no corner where it peaks), then
 // envelope.glsl's fall, reaching 0 at t = decay.
-float kit__drum_hit(float t, float attack, float decay) {
+float kit_private_drum_hit(float t, float attack, float decay) {
     return smoothstep(0.0, attack, t) * kit_env_ar(t, 0.0, decay);
 }
 
 // Two partials at hz * ra and hz * rb, multiplied: tones at their sum and difference.
-float kit__drum_sin2(float t, float hz, float ra, float rb) {
+float kit_private_drum_sin2(float t, float hz, float ra, float rb) {
     return sin(6.28318531 * fract(ra * hz * t)) * sin(6.28318531 * fract(rb * hz * t));
 }
 
@@ -66,13 +66,13 @@ float kit__drum_sin2(float t, float hz, float ra, float rb) {
 //   e.g. float v = kit_drum_kick(since, 50.0, 0.4);
 float kit_drum_kick(float t, float hz, float decay) {
     if (t < 0.0 || t >= decay) return 0.0;
-    float e = kit__drum_hit(t, 0.002, decay);
+    float e = kit_private_drum_hit(t, 0.002, decay);
     // the pitch glides as hz * (1 + 2 exp(-t / tau)); the phase is its integral
     float tau = 0.03;
     float phase = hz * t + 2.0 * hz * tau * (1.0 - exp(-t / tau));
     float body = sin(6.28318531 * fract(phase));
-    float ce = kit__drum_hit(t, 0.001, 0.006);
-    float click = kit__drum_noise(t, 0x2545f491U, false);
+    float ce = kit_private_drum_hit(t, 0.001, 0.006);
+    float click = kit_private_drum_noise(t, 0x2545f491U, false);
     return e * (0.85 * body) + 0.15 * ce * click;
 }
 
@@ -87,12 +87,12 @@ float kit_drum_kick(float t, float hz, float decay) {
 //   e.g. float v = kit_drum_snare(since, 190.0, 0.25);
 float kit_drum_snare(float t, float hz, float decay) {
     if (t < 0.0 || t >= decay) return 0.0;
-    float be = kit__drum_hit(t, 0.002, 0.4 * decay);
+    float be = kit_private_drum_hit(t, 0.002, 0.4 * decay);
     // pitch hz * (1 + 0.3 exp(-t / 0.02)), integrated
     float phase = hz * t + 0.3 * hz * 0.02 * (1.0 - exp(-t / 0.02));
     float body = 0.6 * sin(6.28318531 * fract(phase)) + 0.4 * sin(6.28318531 * fract(1.6 * phase));
-    float ne = kit__drum_hit(t, 0.002, decay);
-    float noise = kit__drum_noise(t, 0x68e31da4U, false);
+    float ne = kit_private_drum_hit(t, 0.002, decay);
+    float noise = kit_private_drum_noise(t, 0x68e31da4U, false);
     return 0.45 * be * be * body + 0.55 * ne * ne * noise;
 }
 
@@ -108,10 +108,10 @@ float kit_drum_snare(float t, float hz, float decay) {
 //   e.g. float v = kit_drum_hat(since, 2000.0, 0.06);
 float kit_drum_hat(float t, float hz, float decay) {
     if (t < 0.0 || t >= decay) return 0.0;
-    float e = kit__drum_hit(t, 0.001, decay);
-    float metal = (kit__drum_sin2(t, hz, 1.0, 1.483)
-                 + kit__drum_sin2(t, hz, 1.8, 2.546)
-                 + kit__drum_sin2(t, hz, 2.63, 3.897)) / 3.0;
-    float noise = kit__drum_noise(t, 0xb5297a4dU, true);
+    float e = kit_private_drum_hit(t, 0.001, decay);
+    float metal = (kit_private_drum_sin2(t, hz, 1.0, 1.483)
+                 + kit_private_drum_sin2(t, hz, 1.8, 2.546)
+                 + kit_private_drum_sin2(t, hz, 2.63, 3.897)) / 3.0;
+    float noise = kit_private_drum_noise(t, 0xb5297a4dU, true);
     return e * e * (0.4 * metal + 0.6 * noise);
 }

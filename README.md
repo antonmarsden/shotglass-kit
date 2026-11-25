@@ -463,7 +463,7 @@ In short (the full rules, with units, precision, sound and versioning, are in
 
 - **A header contract on every public function:** what it does, parameters with units
   and ranges, cost, and an example. You (or an AI) shouldn't need to read the body.
-- **Names:** public functions start with `kit_`, internals with `kit__`. A library you
+- **Names:** public functions start with `kit_`, internals with `kit_private_`. A library you
   add next to the kit won't clash with it.
 - **Portable:** everything compiles as GLSL 3.30 core and GLSL ES 3.00 (WebGL 2),
   checked by a reference compiler (glslang) in CI, not just by one GPU's driver.

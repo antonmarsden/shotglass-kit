@@ -18,16 +18,16 @@
 #include "envelope.glsl"
 
 // sin of a whole number of turns plus a fraction, from the fractional part only.
-float kit__inst_sin(float turns) { return sin(6.28318531 * fract(turns)); }
+float kit_private_inst_sin(float turns) { return sin(6.28318531 * fract(turns)); }
 
 // A hit: a smooth rise over `attack` seconds (no corner where it peaks), then
 // envelope.glsl's fall, reaching 0 at t = decay.
-float kit__inst_hit(float t, float attack, float decay) {
+float kit_private_inst_hit(float t, float attack, float decay) {
     return smoothstep(0.0, attack, t) * kit_env_ar(t, 0.0, decay);
 }
 
 // How much of a partial at `hz` to keep: 1 up to 10 kHz, 0 from 16 kHz.
-float kit__inst_band(float hz) { return 1.0 - smoothstep(10000.0, 16000.0, hz); }
+float kit_private_inst_band(float hz) { return 1.0 - smoothstep(10000.0, 16000.0, hz); }
 
 // kit_inst_pluck(t, hz, decay, bright): a plucked string, additive (12 partials). Like
 // Karplus-Strong without the delay line: higher partials die away sooner, and are
@@ -49,9 +49,9 @@ float kit_inst_pluck(float t, float hz, float decay, float bright) {
     for (int i = 1; i <= 12; i++) {
         float k = float(i);
         float f = k * hz * sqrt(1.0 + 0.00008 * k * k);   // slight inharmonicity
-        float a = pow(k, -slope) * kit__inst_band(f);
-        float e = kit__inst_hit(t, 0.003, decay / (1.0 + damp * (k - 1.0)));
-        s += a * e * e * kit__inst_sin(f * t);
+        float a = pow(k, -slope) * kit_private_inst_band(f);
+        float e = kit_private_inst_hit(t, 0.003, decay / (1.0 + damp * (k - 1.0)));
+        s += a * e * e * kit_private_inst_sin(f * t);
         total += a;
     }
     return s / max(total, 1e-6);
@@ -69,11 +69,11 @@ float kit_inst_pluck(float t, float hz, float decay, float bright) {
 //   e.g. float v = kit_inst_bell(since, kit_note_hz(76), 2.5, 3.0);
 float kit_inst_bell(float t, float hz, float decay, float index) {
     if (t < 0.0 || t >= decay) return 0.0;
-    float e = kit__inst_hit(t, 0.002, decay);
+    float e = kit_private_inst_hit(t, 0.002, decay);
     float amp = e * e;
     index = clamp(index, 0.0, 10.0);
     // the sidebands reach about hz * (1 + 1.4 * index): fade the modulation for high notes
-    float fm = index * amp * kit__inst_band(hz * (1.0 + 1.4 * index)) * kit__inst_sin(1.4 * hz * t);
+    float fm = index * amp * kit_private_inst_band(hz * (1.0 + 1.4 * index)) * kit_private_inst_sin(1.4 * hz * t);
     return amp * sin(6.28318531 * fract(hz * t) + fm);
 }
 
@@ -96,8 +96,8 @@ float kit_inst_epiano(float t, float hz, float held, float bright) {
     float index = bright * (0.3 + 1.5 * kit_env_ar(t, 0.0, 0.6));
     float x = 6.28318531 * fract(hz * t);
     float body = sin(x + index * sin(x));
-    float te = kit__inst_hit(t, 0.002, 0.08);
-    float tine = 0.3 * bright * te * te * kit__inst_sin(14.0 * hz * t) * kit__inst_band(14.0 * hz);
+    float te = kit_private_inst_hit(t, 0.002, 0.08);
+    float tine = 0.3 * bright * te * te * kit_private_inst_sin(14.0 * hz * t) * kit_private_inst_band(14.0 * hz);
     return amp * (body + tine) / (1.0 + 0.3 * bright);
 }
 
@@ -125,8 +125,8 @@ float kit_inst_pad(float t, float hz, float held, float attack, float release) {
         float offset = 0.31 * float(v);                       // voices start out of phase
         for (int i = 1; i <= 6; i++) {
             float k = float(i);
-            float a = kit__inst_band(k * hz * detune) / k;
-            s += a * kit__inst_sin(k * (hz * detune * t + offset));
+            float a = kit_private_inst_band(k * hz * detune) / k;
+            s += a * kit_private_inst_sin(k * (hz * detune * t + offset));
             total += a;
         }
     }

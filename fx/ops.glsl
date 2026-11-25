@@ -28,7 +28,7 @@ vec3 kit_fx_grade(vec3 col, float stops, float contrast, float saturation, vec3 
 
 // core's integer hash (lowbias32 over 3 inputs), copied so the grain is the same as
 // core's kit_grain: a film names its libraries itself, so fx can't #include <kit/...>.
-uint kit__fx_mix(uint x) {
+uint kit_private_fx_mix(uint x) {
     x ^= x >> 16;
     x *= 0x7feb352dU;
     x ^= x >> 15;
@@ -36,8 +36,8 @@ uint kit__fx_mix(uint x) {
     x ^= x >> 16;
     return x;
 }
-float kit__fx_hash(uvec3 v) {
-    uint h = kit__fx_mix(v.x ^ kit__fx_mix(v.y ^ kit__fx_mix(v.z + 0x9e3779b9U) + 0x7f4a7c15U));
+float kit_private_fx_hash(uvec3 v) {
+    uint h = kit_private_fx_mix(v.x ^ kit_private_fx_mix(v.y ^ kit_private_fx_mix(v.z + 0x9e3779b9U) + 0x7f4a7c15U));
     return float(h >> 8) * (1.0 / 16777216.0);
 }
 
@@ -52,9 +52,9 @@ float kit__fx_hash(uvec3 v) {
 //   e.g.       col = kit_fx_grain(col, fragCoord, iFrame, 0.06, 0.0);
 vec3 kit_fx_grain(vec3 col, vec2 fragCoord, int frame, float strength, float tint) {
     uvec3 cell = uvec3(ivec3(ivec2(floor(fragCoord)), frame));
-    vec3 g = vec3(kit__fx_hash(cell),
-                  kit__fx_hash(cell ^ uvec3(0U, 0U, 0x55555555U)),
-                  kit__fx_hash(cell ^ uvec3(0U, 0U, 0x2aaaaaaaU)));
+    vec3 g = vec3(kit_private_fx_hash(cell),
+                  kit_private_fx_hash(cell ^ uvec3(0U, 0U, 0x55555555U)),
+                  kit_private_fx_hash(cell ^ uvec3(0U, 0U, 0x2aaaaaaaU)));
     g = mix(vec3(g.x), g, tint) - 0.5;
     return clamp(col + g * strength, 0.0, 1.0);
 }

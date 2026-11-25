@@ -31,18 +31,18 @@
 #define MAXW 12.0
 #endif
 
-bool kit__q_ink(vec2 p) {
+bool kit_private_q_ink(vec2 p) {
     if (any(lessThan(p, vec2(0.0))) || any(greaterThan(p, iResolution.xy))) return false;
     return kit_q_luma(getFrame(p / iResolution.xy).rgb) <= LEVEL;
 }
 
 // Ink pixels in a row through p along dir (p's own included).
-float kit__q_run(vec2 p, vec2 dir) {
+float kit_private_q_run(vec2 p, vec2 dir) {
     int n = int(MAXW);
     float run = 1.0;
     for (int s = -1; s <= 1; s += 2) {
         for (int k = 1; k <= n; k++) {
-            if (!kit__q_ink(p + float(s * k) * dir)) break;
+            if (!kit_private_q_ink(p + float(s * k) * dir)) break;
             run += 1.0;
         }
     }
@@ -50,12 +50,12 @@ float kit__q_run(vec2 p, vec2 dir) {
 }
 
 void mainMetric(out vec4 value, in vec2 fragCoord) {
-    if (!kit__q_ink(fragCoord)) {
+    if (!kit_private_q_ink(fragCoord)) {
         value = vec4(0.0, 0.0, 0.0, notMeasured());   // paper: outside the measure
         return;
     }
-    float straight = min(kit__q_run(fragCoord, vec2(1.0, 0.0)), kit__q_run(fragCoord, vec2(0.0, 1.0)));
-    float diagonal = min(kit__q_run(fragCoord, vec2(1.0, 1.0)), kit__q_run(fragCoord, vec2(1.0, -1.0)));
+    float straight = min(kit_private_q_run(fragCoord, vec2(1.0, 0.0)), kit_private_q_run(fragCoord, vec2(0.0, 1.0)));
+    float diagonal = min(kit_private_q_run(fragCoord, vec2(1.0, 1.0)), kit_private_q_run(fragCoord, vec2(1.0, -1.0)));
     float d = abs(min(straight, 1.41421356 * diagonal) - WIDTH * iResolution.y);
     value = vec4(max(kit_q_heat(d / 4.0), vec3(0.0, 0.0, 0.3)), d);
 }
