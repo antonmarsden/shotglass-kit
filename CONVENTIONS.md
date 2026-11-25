@@ -273,5 +273,6 @@ Existing code that doesn't follow these rules, and why.
 
 | where | rule | why it stays |
 |---|---|---|
+| `core/sdf_coverage.glsl` | §1 second underscore for internals | `kit_sd_coverage_internal` uses single underscores for browser WebGL compatibility. |
 | `transitions/dissolve.glsl` | §3 no `sin()` hashes | Renders exactly like the engine's deprecated built-in `dissolve`, so films can move to the kit without their pixels changing. A deterministic dissolve can come as a new transition. |
 | `transitions/wipe.glsl` | §2 screen lengths in frame heights | `softness` is in uv units (0..1 on each axis), as in the engine's built-in `wipe`, for the same reason. |
