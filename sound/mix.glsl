@@ -41,7 +41,7 @@ vec2 kit_mix_read(int bus, int samp) {
 }
 
 // Seconds to a whole number of samples (>= 0).
-int kit__mix_samples(float seconds, int rate) {
+int kit_private_mix_samples(float seconds, int rate) {
     return int(floor(max(seconds, 0.0) * float(rate) + 0.5));
 }
 
@@ -62,7 +62,7 @@ int kit__mix_samples(float seconds, int rate) {
 //   e.g. vec2 echo = kit_mix_delay(kit_bus_music, samp, int(iSampleRate), 0.31, 3, 0.5, 1.0);
 vec2 kit_mix_delay(int bus, int samp, int rate, float time, int taps, float feedback,
                    float pingpong) {
-    int d = max(kit__mix_samples(time, rate), 1);
+    int d = max(kit_private_mix_samples(time, rate), 1);
     int n = clamp(taps, 1, 16);
     float fb = clamp(feedback, 0.0, 0.99);
     float pp = clamp(pingpong, 0.0, 1.0);
@@ -139,8 +139,8 @@ vec2 kit_mix_reverb(int bus, int samp, int rate, float size, float decay) {
 //   cost: 64 bus reads (128 for kit_bus_all)
 //   e.g. float lvl = kit_mix_level(kit_bus_sfx, samp, int(iSampleRate), 0.01, 0.15);
 float kit_mix_level(int bus, int samp, int rate, float attack, float release) {
-    int a = kit__mix_samples(clamp(attack, 0.0, 0.05), rate);
-    int r = kit__mix_samples(release, rate);
+    int a = kit_private_mix_samples(clamp(attack, 0.0, 0.05), rate);
+    int r = kit_private_mix_samples(release, rate);
     int step = max((a + r + 62) / 63, 1);   // 64 points cover a + r
     int first = ((samp + a) / step) * step; // the furthest grid point ahead
     float fa = float(max(a, 1)), fr = float(max(r, 1));

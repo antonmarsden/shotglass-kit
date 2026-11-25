@@ -32,7 +32,7 @@
 #define FLOOR 0.001
 #endif
 
-float kit__q_jump(int s) { return kit_q_slope_jump(getSound(s - 1), getSound(s), getSound(s + 1)); }
+float kit_private_q_jump(int s) { return kit_q_slope_jump(getSound(s - 1), getSound(s), getSound(s + 1)); }
 
 void mainSoundMetric(out float value, in int samp) {
     int w = int(WIN);
@@ -41,9 +41,9 @@ void mainSoundMetric(out float value, in int samp) {
     float n = 0.0;
     for (int k = -w; k <= w; k += st) {
         if (abs(k) < 4) continue;   // leave the click itself and its neighbours out
-        float r = kit__q_jump(samp + k);
+        float r = kit_private_q_jump(samp + k);
         e += r * r;
         n += 1.0;
     }
-    value = kit__q_jump(samp) / (sqrt(e / max(n, 1.0)) + FLOOR);
+    value = kit_private_q_jump(samp) / (sqrt(e / max(n, 1.0)) + FLOOR);
 }

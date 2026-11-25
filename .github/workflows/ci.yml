@@ -99,7 +99,7 @@ jobs:
         run: |
           missing=0
           for f in fx/*.glsl blend/*.glsl quality/*.glsl; do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rlE --include='*.glsl' "\b$fn *\(" "$(dirname "$f")" | grep -qvxF "$f"; then
                 echo "::error file=$f::$fn is never called by a pass in its library"
                 missing=1
@@ -107,7 +107,7 @@ jobs:
             done
           done
           for f in core/*.glsl sound/*.glsl text/*.glsl; do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
                 missing=1
@@ -123,7 +123,7 @@ jobs:
         run: |
           missing=0
           for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
                 missing=1
@@ -172,6 +172,13 @@ jobs:
             done
           done
           exit $missing
+
+      - name: WebGL 2 browser check
+        run: |
+          npm install --prefix "$RUNNER_TEMP/kit-webgl" --no-audit --no-fund playwright@1.56.1
+          export CHROME_BIN="$(command -v google-chrome)"
+          export NODE_PATH="$RUNNER_TEMP/kit-webgl/node_modules"
+          node .github/check-webgl.cjs
 
       # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
       - name: Strict GLSL check
