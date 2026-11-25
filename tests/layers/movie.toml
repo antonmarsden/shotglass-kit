@@ -4,7 +4,7 @@
 # strictly, renders it and compares it with tests/golden/layers.png.
 # Order: multiply, screen, overlay, hardlight, add, darken, lighten, difference,
 # colordodge, colorburn, softlight (0-11 s); grade, grain, vignette, letterbox, place,
-# bloom with screen, bloom with add (11-18 s).
+# bloom with screen, bloom with add (11-18 s); then plain and dithered rounding.
 title = "shotglass-kit layer tests"
 aspect = [16, 9]
 
@@ -205,3 +205,24 @@ to = 18
 params = { direction = [0.0, 1.0] }
 uniforms.uRadius = 0.03
 uniforms.uGain = 2.0
+
+[[shot]]
+id = "plain-ramp"
+scene = "scenes/dither.glsl"
+duration = 1
+uniforms.uRound = 1.0
+
+[[shot]]
+id = "dither-ramp"
+scene = "scenes/dither.glsl"
+duration = 1
+uniforms.uRound = 0.0
+
+[[layer]]
+id = "dither"
+type = "fx/dither"
+scale = 1
+channels = ["@input", { file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]
+from = 19
+to = 20
+params = { ditherLevels = 16 }

@@ -142,7 +142,7 @@ to an animation helper doesn't touch `film.png`; everything below applies to it 
 Likewise `tests/text` (text/, with its own fonts) and `tests/golden/text.png`, checked by the "Text
 film matches its golden picture" step, and `tests/layers` (fx/ and blend/) with
 `tests/golden/layers.png`, checked by the "Layers film matches its golden picture" step
-(18 frames, one per second: each blend mode, then each fx pass).
+(20 frames, one per second: each blend mode, then each fx pass including the plain and dithered ramps).
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
 and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures
