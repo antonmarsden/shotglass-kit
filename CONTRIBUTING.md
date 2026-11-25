@@ -24,8 +24,8 @@ public domain, CC0) is fine if you name its source and licence in the file.
 - **Portable GLSL:** GLSL 3.30 core features only, and valid GLSL ES 3.00: float
   literals (`1.0`, not `1`), `U` on unsigned literals, no implicit int→float.
   `shotglass check tests/film --web --no-gpu` checks both dialects with glslang.
-  CI also runs `.github/check-webgl.cjs` to catch reserved identifiers glslang
-  accepts and compile the simplex-flow scene with Chromium's WebGL 2 compiler.
+  CI also runs `.github/check-webgl.cjs` to catch double-underscore identifiers
+  that some browsers reject and compile the simplex-flow scene with Chromium's WebGL 2 compiler.
 - **Deterministic:** no `sin()` hashes or other GPU-dependent tricks in new code. Use
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a

@@ -1,5 +1,5 @@
-// Cover the WebGL identifier restriction that glslang reports as a warning,
-// then compile and link the scene that exposed the difference.
+// Enforce the kit’s browser compatibility convention, then compile and link
+// the scene that exposed the difference.
 const { execFileSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 
@@ -15,11 +15,11 @@ function checkIdentifiers() {
         for (const match of source.matchAll(/\b[A-Za-z_][A-Za-z_0-9]*\b/g)) {
             if (!match[0].includes('__')) continue;
             const line = source.slice(0, match.index).split('\n').length;
-            console.error(`${path}:${line}: WebGL reserves identifier ${match[0]}`);
+            console.error(`${path}:${line}: avoid double underscores in GLSL identifier ${match[0]} for browser compatibility`);
             invalid = true;
         }
     }
-    if (invalid) throw new Error('GLSL uses reserved WebGL identifiers');
+    if (invalid) throw new Error('GLSL uses double-underscore identifiers that can fail in browsers');
 }
 
 async function checkScene() {
