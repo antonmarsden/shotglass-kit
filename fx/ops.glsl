@@ -115,3 +115,32 @@ vec3 kit_fx_bright(vec3 col, float from, float width) {
     float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
     return col * (width > 0.0 ? smoothstep(from, from + width, luma) : step(from, luma));
 }
+
+// kit_fx_chroma_key(plate, key, cutoff, width, strength): key a straight-alpha plate.
+//   plate     straight display RGBA, 0..1
+//   key       screen sample in display RGB, 0..1
+//   cutoff    distance in RGB chroma units; <= cutoff is clear, clamped to 0..2
+//   width     distance from cutoff to full coverage, clamped to 1e-6..2 if positive;
+//             <= 0 gives a hard cut
+//   strength  spill removal, clamped to 0..1; 0 keeps RGB, 1 removes the positive
+//             projection along the key's chroma; removal fades to zero below
+//             1e-6 key chroma magnitude
+//   ->        straight display RGBA, 0..1; alpha is plate.a times the smooth matte
+//             computed from the original RGB, independently of spill removal
+//   e.g.      fragColor = kit_fx_chroma_key(plate, vec3(0.0, 1.0, 0.0), 0.12, 0.30, 1.0);
+vec4 kit_fx_chroma_key(vec4 plate, vec3 key, float cutoff, float width, float strength) {
+    // Project onto the plane perpendicular to neutral RGB. Starting with
+    // channel differences makes true greys map to exactly zero.
+    vec3 chroma = plate.rgb - plate.g;
+    vec3 screen = key - key.g;
+    chroma -= (chroma.r + chroma.b) / 3.0;
+    screen -= (screen.r + screen.b) / 3.0;
+    float distance_from_cutoff = length(chroma - screen) - clamp(cutoff, 0.0, 2.0);
+    float matte = width > 0.0
+        ? smoothstep(0.0, clamp(width, 1e-6, 2.0), distance_from_cutoff)
+        : (distance_from_cutoff > 0.0 ? 1.0 : 0.0);
+
+    float spill = max(dot(chroma, screen), 0.0) / max(dot(screen, screen), 1e-12);
+    vec3 rgb = clamp(plate.rgb - clamp(strength, 0.0, 1.0) * spill * screen, 0.0, 1.0);
+    return vec4(rgb, plate.a * matte);
+}

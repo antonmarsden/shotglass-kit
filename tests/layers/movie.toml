@@ -1,17 +1,25 @@
 # The kit's layer test film (fx/ and blend/): the blend modes one after another, each
 # over the same picture with the same swatch layer (alpha rising left to right), then
-# each fx pass. One second each; `base+<n>.5` in a strip is the n-th. CI checks it
-# strictly, renders it and compares it with tests/golden/layers.png.
+# each fx pass. One second each. CI checks it strictly and compares its strip with
+# tests/golden/layers.png.
 # Order: multiply, screen, overlay, hardlight, add, darken, lighten, difference,
 # colordodge, colorburn, softlight (0-11 s); grade, grain, vignette, letterbox, place,
-# bloom with screen, bloom with add (11-18 s).
+# bloom with screen, bloom with add (11-18 s); chroma key (18-19 s).
 title = "shotglass-kit layer tests"
 aspect = [16, 9]
+
+[textures]
+chroma_plate = "chroma_plate.png"
 
 [[shot]]
 id = "base"
 scene = "scenes/base.glsl"
 duration = 18
+
+[[shot]]
+id = "key-backdrop"
+scene = "scenes/key_backdrop.glsl"
+duration = 1
 
 [[layer]]
 id = "multiply"
@@ -205,3 +213,13 @@ to = 18
 params = { direction = [0.0, 1.0] }
 uniforms.uRadius = 0.03
 uniforms.uGain = 2.0
+
+# The synthetic RGBA plate has an uneven green screen, soft mixed edges and
+# two orange discs with matching RGB but different source alpha.
+[[layer]]
+id = "chroma_key"
+type = "fx/chroma_key"
+channels = ["chroma_plate"]
+from = "key-backdrop"
+to = "key-backdrop"
+uniforms.uDespill = 1.0
