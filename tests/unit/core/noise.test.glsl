@@ -2,6 +2,63 @@
 // computed on the CPU), and the noises stay in their documented ranges.
 #include <kit/noise.glsl>
 
+void test_cellular_noise(vec2 c) {
+    vec2 p = (c - 0.5) * 32.0;
+    vec2 f = kit_cellular_noise(p);
+    expect(f.x >= 0.0 && f.x <= f.y && f.y <= 1.288, f.y);
+
+    // Distances to the first and second nearest features are both 1-Lipschitz.
+    const float step_size = 0.001953125;
+    vec2 shifted = kit_cellular_noise(p + vec2(step_size, 0.0));
+    expect(all(lessThanEqual(abs(shifted - f), vec2(step_size + 1e-6))), shifted.y);
+}
+
+void test_cellular_noise_feature() {
+    ivec2 cell = ivec2(-3, 2);
+    vec2 p = vec2(cell) + 0.375 + 0.25 * vec2(kit_hash(ivec3(cell, 0)),
+                                             kit_hash(ivec3(cell, 1)));
+    vec2 f = kit_cellular_noise(p);
+    expect_near(f.x, 0.0, 1e-6);
+    expect(f.y >= 0.75, f.y);
+}
+
+void test_simplex_flow_period_and_gradient(vec2 c) {
+    // Binary fractions keep the test coordinates exact after adding a period.
+    vec2 p = (floor(c * 255.0 + 0.5) - 128.0) * (1.0 / 16.0);
+    ivec2 period = ivec2(7, 4);
+    float angle = 1.7;
+    vec2 g, gx, gy, unused;
+    float n = kit_simplex_flow(p, period, angle, g);
+    expect(abs(n) <= 1.05, n);
+    expect_near(kit_simplex_flow(p + vec2(7.0, 0.0), period, angle, gx), n, 1e-5);
+    expect_near(kit_simplex_flow(p - vec2(0.0, 4.0), period, angle, gy), n, 1e-5);
+    expect_near(gx, g, 1e-5);
+    expect_near(gy, g, 1e-5);
+
+    const float h = 0.001953125;
+    vec2 dx = vec2(h, 0.0), dy = vec2(0.0, h);
+    vec2 positive = vec2(kit_simplex_flow(p + dx, period, angle, unused),
+                         kit_simplex_flow(p + dy, period, angle, unused));
+    vec2 negative = vec2(kit_simplex_flow(p - dx, period, angle, unused),
+                         kit_simplex_flow(p - dy, period, angle, unused));
+    expect_near((positive - negative) / (2.0 * h), g, 3e-4);
+}
+
+void test_simplex_flow_rotation() {
+    vec2 p = vec2(-0.25, 0.37);
+    vec2 g, rotated;
+    float n = kit_simplex_flow(p, ivec2(0), 0.0, g);
+    expect_near(kit_simplex_flow(p, ivec2(0), 3.14159265, rotated), -n, 1e-6);
+    expect_near(rotated, -g, 1e-6);
+}
+
+void test_dither() {
+    expect_eq(kit_dither(0.0, 8, 0.01), 0.0);
+    expect_eq(kit_dither(1.0, 256, 0.99), 1.0);
+    expect_eq(kit_dither(0.625, 3, 0.5), 0.5);
+    expect_eq(kit_dither(0.625, 3, 0.25), 1.0);
+}
+
 // The reference values are lowbias32 computed in 64-bit integer arithmetic on the CPU.
 void test_hash_u_matches_the_cpu() {
     expect_eq(kit_hash_u(0u), 0u);

@@ -129,7 +129,7 @@ reports: it's a breaking change (CONVENTIONS.md §7), noted in the release.
 
 ## Golden picture
 
-CI renders eight frames of `tests/film` on Mesa (llvmpipe) and compares them with
+CI renders selected frames of `tests/film` on Mesa (llvmpipe) and compares them with
 [`tests/golden/film.png`](tests/golden) using `shotglass strip --compare` and its default
 tolerance (a pixel differs when a channel is off by more than 8/255; at most 0.1% of
 pixels may differ and the average difference must stay under 0.25/255). Real GPUs stay
@@ -157,7 +157,7 @@ change:
 
   ```sh
   xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out film.png \
-    --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3 \
+    --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3,cellular+1,simplex-flow+1,blue-noise+1 \
     --compare tests/golden/film.png --bless
   ```
 

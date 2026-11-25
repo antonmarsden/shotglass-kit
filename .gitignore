@@ -5,5 +5,7 @@
 # ...except the references CI compares against
 !/tests/golden/*.wav
 !/tests/golden/*.png
+# Bundled threshold texture
+!/core/textures/blue-noise-64.png
 /golden-out/
 /transition-endpoints/

@@ -86,6 +86,116 @@ float kit_gradient_noise(vec2 p) {
     return mix(mix(a, b, u.x), mix(d, e, u.x), u.y);
 }
 
+// kit_cellular_noise(p): distances to the two nearest feature points (F1, F2).
+//   p   position in unit cells, abs(p) < 2^22 per axis
+//   ->  Euclidean distances in cell units, nearest first
+//   cost: 18 hashes, 9 squared distances, 2 square roots
+//   e.g. vec2 f = kit_cellular_noise(uv * 10.0); float veins = f.y - f.x;
+vec2 kit_cellular_noise(vec2 p) {
+    vec2 base = floor(p);
+    vec2 local = p - base;
+    uvec2 cell = uvec2(ivec2(base));
+    vec2 nearest = vec2(4.0);
+
+    // Keep features within 1/8 of their cell centre. The current cell and its
+    // neighbour across the closest grid line supply two candidates at most
+    // length(vec2(1.125, 0.625)) away. Skipped cells are at least 1.375 away.
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            ivec2 offset = ivec2(x, y);
+            uvec2 candidate = cell + uvec2(offset);
+            vec2 jitter = vec2(kit__unit(kit_hash_u(uvec3(candidate, 0U))),
+                               kit__unit(kit_hash_u(uvec3(candidate, 1U))));
+            vec2 delta = vec2(offset) + 0.375 + 0.25 * jitter - local;
+            float distance_squared = dot(delta, delta);
+            nearest.y = min(nearest.y, max(nearest.x, distance_squared));
+            nearest.x = min(nearest.x, distance_squared);
+        }
+    }
+    return sqrt(nearest);
+}
+
+int kit__noise_wrap(int cell, int period) {
+    if (period == 0) return cell;
+    int remainder = abs(cell) % period;
+    return cell < 0 && remainder != 0 ? period - remainder : remainder;
+}
+
+// kit_simplex_flow(p, period, angle, gradient): tiled 2D simplex noise with rotating gradients.
+//   p         position in lattice units, abs(p) < 2^20 per axis
+//   period    0 disables tiling on that axis, otherwise 1..2^20 units (even on y)
+//   angle     gradient rotation in radians, typically 0..2*pi
+//   gradient  output partial derivatives with respect to p.x and p.y
+//   ->        signed noise, approximately -1..1
+//   cost: 3 hashes, 3 simplex corner contributions, 1 sin and 1 cos
+//   e.g. vec2 g; float n = kit_simplex_flow(uv * 8.0, ivec2(8), iTime, g);
+// Adapted from psrdnoise2.glsl by Stefan Gustavson and Ian McEwan (MIT).
+// https://github.com/stegu/psrdnoise/blob/main/src/psrdnoise2.glsl
+//
+// Copyright (c) 2021 Stefan Gustavson and Ian McEwan.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+float kit_simplex_flow(vec2 p, ivec2 period, float angle, out vec2 gradient) {
+    vec2 simplex = vec2(p.x + 0.5 * p.y, p.y);
+    ivec2 base = ivec2(floor(simplex));
+    vec2 fraction = fract(simplex);
+    ivec2 middle = fraction.x >= fraction.y ? ivec2(1, 0) : ivec2(0, 1);
+    ivec2 corners[3] = ivec2[3](base, base + middle, base + ivec2(1));
+
+    float c = cos(angle), s = sin(angle);
+    mat2 rotation = mat2(c, s, -s, c);
+    float value = 0.0;
+    gradient = vec2(0.0);
+    for (int i = 0; i < 3; ++i) {
+        // World-space x lies on half-integer coordinates. Wrap doubled x
+        // to keep feature hashes exact even at negative tile boundaries.
+        ivec2 corner = corners[i];
+        int twice_x = 2 * corner.x - corner.y;
+        vec2 delta = p - vec2(0.5 * float(twice_x), float(corner.y));
+        ivec2 key = ivec2(kit__noise_wrap(twice_x, 2 * period.x),
+                          kit__noise_wrap(corner.y, period.y));
+        vec2 direction = rotation * (kit__gradient(kit_hash_u(uvec2(key))) * 0.70710678);
+        float weight = max(0.8 - dot(delta, delta), 0.0);
+        float w2 = weight * weight;
+        float w4 = w2 * w2;
+        float ramp = dot(direction, delta);
+        value += w4 * ramp;
+        gradient += w4 * direction - (8.0 * w2 * weight * ramp) * delta;
+    }
+    gradient *= 10.9;
+    return 10.9 * value;
+}
+
+// kit_dither(value, levels, threshold): rounds a normalized value using a noise threshold.
+//   value      0..1, in the colour space being quantized
+//   levels     number of output levels, 2..256 inclusive
+//   threshold  0..1, exclusive. For the kit's blue-noise tile use (255*t + 0.5)/256.
+//   ->         one of levels equally spaced values from 0 through 1
+//   cost: 1 floor, 1 comparison, 1 division (texture fetch is separate)
+//   e.g. float d = kit_dither(uv.x, 8, threshold);
+float kit_dither(float value, int levels, float threshold) {
+    float intervals = float(levels - 1);
+    float scaled = value * intervals;
+    float lower = floor(scaled);
+    return (lower + step(threshold, scaled - lower)) / intervals;
+}
+
 // kit_fbm(p, octaves): fractal (layered) value noise: clouds, terrain, smoke.
 // Each octave is twice as fine, half as strong, and rotated to hide the grid.
 //   p        any position
