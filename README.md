@@ -11,7 +11,7 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
+| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
 | [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
 | [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
 | [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6 at commit `efaac0f` or later, for `notMeasured()`) |
@@ -56,8 +56,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
 `kit_cellular_noise` returns the two nearest feature distances for patterns such
 as stone and scales. `kit_simplex_flow` returns rotating simplex noise and its
-spatial gradient, with optional rectangular tiling. The
-[test film](tests/film/movie.toml) includes a shot for each pattern.
+spatial gradient, with optional rectangular tiling.
+`kit_curl_noise` in `<kit/noise.glsl>` rotates that gradient clockwise to give an
+unnormalised, divergence-free 2D field. Scale it to taste for flow or UV warping.
+Use an even positive y period for tiling, or zero on either axis to disable its
+tiling. This example repeats over the unit UV square and loops every four seconds.
+
+```glsl
+vec2 velocity = kit_curl_noise(uv * vec2(6.0, 4.0), ivec2(6, 4),
+                               6.28318531 * fract(iTime / 4.0));
+```
+
+The [simplex-flow shot](tests/film/scenes/simplex-flow.glsl) uses the field to
+warp two side-by-side tiles and loops once per shot.
 
 For blue-noise dithering, bind the CC0 tile as a data texture in a shot:
 
@@ -134,6 +145,30 @@ opacity = 0.7
 work with any `blend`; `fx/grade` and `fx/grain` read `@input` and write an opaque
 picture, so a layer's `opacity` is their strength. A pass assumes straight alpha from its
 channel, which is what `[textures]` images and `@picture` give.
+
+**Chroma key** uses a plate on `iChannel0`. Bind a `[textures]` image or, with
+shotglass 0.1.6, an image sequence. Leave the texture's `srgb` option at its default
+(`false`) to sample display RGB. The pass fits the plate to the frame and multiplies
+its straight alpha by the matte. The shot underneath supplies the background.
+
+```toml
+[textures]
+plate = "renders/plate_####.png"
+
+[[layer]]
+id = "keyed-plate"
+type = "fx/chroma_key"
+channels = ["plate"]
+uniforms.uKeyColor = [0.08, 0.84, 0.13]
+uniforms.uThreshold = 0.12
+uniforms.uSoftness = 0.30
+uniforms.uDespill = 1.0
+```
+
+Sample `uKeyColor` from the screen in display RGB (default pure green). Raise
+`uThreshold` to clear more of the screen. `uSoftness` sets the extra chroma distance
+to full coverage, with zero giving a hard edge. `uDespill` controls removal of
+key-coloured spill from 0 to 1 and leaves coverage unchanged.
 
 **Dither** needs the core library, named `kit` in this example. Add the pass
 after colour grading and glow, at full layer resolution.

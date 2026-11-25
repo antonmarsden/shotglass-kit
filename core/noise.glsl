@@ -182,6 +182,19 @@ float kit_simplex_flow(vec2 p, ivec2 period, float angle, out vec2 gradient) {
     return 10.9 * value;
 }
 
+// kit_curl_noise(p, period, angle): divergence-free 2D field from simplex flow.
+//   p       position in lattice units, abs(p) < 2^20 per axis
+//   period  0 disables tiling on that axis, otherwise 1..2^20 units (even on y)
+//   angle   gradient rotation in radians, one turn per loop (0..2*pi)
+//   ->      unnormalised clockwise-rotated gradient (dn/dy, -dn/dx), in noise per lattice unit
+//   cost: 1 simplex flow evaluation
+//   e.g. vec2 curl = kit_curl_noise(uv * 8.0, ivec2(8), iTime);
+vec2 kit_curl_noise(vec2 p, ivec2 period, float angle) {
+    vec2 gradient;
+    kit_simplex_flow(p, period, angle, gradient);
+    return vec2(gradient.y, -gradient.x);
+}
+
 // kit_dither(value, levels, threshold): rounds a normalized value using a noise threshold.
 //   value      0..1, in the colour space being quantized
 //   levels     number of output levels, 2..256 inclusive
