@@ -1,26 +1,5 @@
-// Enforce the kit’s browser compatibility convention, then compile and link
-// the scene that exposed the difference.
-const { execFileSync } = require('node:child_process');
+// Compile and link the simplex-flow scene in Chromium WebGL 2.
 const { readFileSync } = require('node:fs');
-
-function checkIdentifiers() {
-    const paths = execFileSync('git', ['ls-files', '-z', '--', '*.glsl'], { encoding: 'utf8' })
-        .split('\0').filter(Boolean);
-    let invalid = false;
-    for (const path of paths) {
-        const source = readFileSync(path, 'utf8').replace(
-            /\/\*[\s\S]*?\*\/|\/\/[^\n]*|^[ \t]*#\s*include\b[^\n]*/gm,
-            text => text.replace(/[^\n]/g, ' ')
-        );
-        for (const match of source.matchAll(/\b[A-Za-z_][A-Za-z_0-9]*\b/g)) {
-            if (!match[0].includes('__')) continue;
-            const line = source.slice(0, match.index).split('\n').length;
-            console.error(`${path}:${line}: avoid double underscores in GLSL identifier ${match[0]} for browser compatibility`);
-            invalid = true;
-        }
-    }
-    if (invalid) throw new Error('GLSL uses double-underscore identifiers that can fail in browsers');
-}
 
 async function checkScene() {
     const { chromium } = require('playwright');
@@ -72,12 +51,7 @@ void main() { mainImage(color, gl_FragCoord.xy); }`;
     }
 }
 
-async function main() {
-    checkIdentifiers();
-    await checkScene();
-}
-
-main().catch(error => {
+checkScene().catch(error => {
     console.error(error);
     process.exitCode = 1;
 });

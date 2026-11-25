@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "efaac0ffd43e8509747d9efb63aab995c0b49274"
+  SHOTGLASS_REV: "75704e91609f60106ea7d1cdf1d62c370eb64db6"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         env:
           REV: ${{ steps.rev.outputs.sha }}
-        run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$REV" shotglass
+        run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$REV" --no-default-features --features strict-glsl shotglass
 
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
@@ -183,14 +183,14 @@ jobs:
       # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
       - name: Strict GLSL check
         run: |
-          shotglass check tests/film --web --no-gpu
-          shotglass check tests/animation --web --no-gpu
-          shotglass check tests/sound --web --no-gpu
-          shotglass check tests/instruments --web --no-gpu
-          shotglass check tests/mix --web --no-gpu
-          shotglass check tests/transitions --web --no-gpu
-          shotglass check tests/text --web --no-gpu
-          shotglass check tests/layers --web --no-gpu
+          shotglass check tests/film --web --strict --no-gpu
+          shotglass check tests/animation --web --strict --no-gpu
+          shotglass check tests/sound --web --strict --no-gpu
+          shotglass check tests/instruments --web --strict --no-gpu
+          shotglass check tests/mix --web --strict --no-gpu
+          shotglass check tests/transitions --web --strict --no-gpu
+          shotglass check tests/text --web --strict --no-gpu
+          shotglass check tests/layers --web --strict --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the

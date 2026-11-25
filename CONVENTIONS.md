@@ -189,9 +189,9 @@ So:
   `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;
   one that changes them on purpose re-blesses the reference in the same commit.
-- **Everything passes `shotglass check tests/film --web --no-gpu`**: glslang at GLSL
-  3.30 core and as GLSL ES 3.00. CI also checks for double-underscore identifiers across the
-  GLSL sources and compiles the simplex-flow scene in Chromium WebGL 2.
+- **Everything passes `shotglass check tests/film --web --strict --no-gpu`**: glslang at GLSL
+  3.30 core and as GLSL ES 3.00, with browser compatibility warnings treated as
+  errors. CI also compiles the simplex-flow scene in Chromium WebGL 2.
 - **Look at it.** `shotglass strip tests/film --count 8 --out strip.png` (CI uploads
   one too). A change that should keep the pixels the same should keep the strip the same.
 - **Transitions** show exactly the old shot at `progress = 0` and exactly the new one

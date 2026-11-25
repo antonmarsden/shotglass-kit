@@ -23,9 +23,9 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `core/noise.glsl`.
 - **Portable GLSL:** GLSL 3.30 core features only, and valid GLSL ES 3.00: float
   literals (`1.0`, not `1`), `U` on unsigned literals, no implicit int→float.
-  `shotglass check tests/film --web --no-gpu` checks both dialects with glslang.
-  CI also runs `.github/check-webgl.cjs` to catch double-underscore identifiers
-  that some browsers reject and compile the simplex-flow scene with Chromium's WebGL 2 compiler.
+  `shotglass check tests/film --web --strict --no-gpu` checks both dialects with glslang.
+  The strict web check fails on browser compatibility warnings. CI also compiles
+  the simplex-flow scene with Chromium's WebGL 2 compiler.
 - **Deterministic:** no `sin()` hashes or other GPU-dependent tricks in new code. Use
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
@@ -95,7 +95,7 @@ colour, plus a pass `blend/<mode>.glsl`: `getBase`, `getLayer`, `kit_blend_sourc
 
 Add a layer for it to `tests/layers/movie.toml` (a second of film, in the order the
 header comment lists), unit-test its function in `tests/unit/fx` or `tests/unit/blend`,
-run `shotglass check tests/layers --web --no-gpu`, look at the strip, and re-bless
+run `shotglass check tests/layers --web --strict --no-gpu`, look at the strip, and re-bless
 `tests/golden/layers.png` (below). A new folder starts at version 0.1.0 in its
 `library.toml`; `requires_shotglass` is the engine release that has the layer feature it
 uses.
