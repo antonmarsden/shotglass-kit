@@ -11,9 +11,10 @@ with the reason.
 ## 1. Names
 
 - **Prefix.** Public functions, structs and constants start with the library's prefix:
-  `kit_` for everything in this repository. Internals start with the prefix and a
-  second underscore (`kit__unit`). A third-party library built on these conventions
-  uses its own prefix (`toon_`, `toon__`).
+  `kit_` for everything in this repository. Use `kit_internal_` for new private
+  declarations to avoid double underscores in WebGL identifiers. Existing private
+  declarations also use `kit__`. A third-party library built on these conventions
+  uses its own prefix (`toon_`, `toon_internal_`).
 - **Shape:** `kit_<area>_<thing>` when a file holds a family (`kit_sd_box`,
   `kit_op_smin`, `kit_ease_smooth`); plain `kit_<thing>` otherwise (`kit_hash`,
   `kit_fbm`, `kit_aces`). Lower case, words split with `_`.
@@ -273,6 +274,5 @@ Existing code that doesn't follow these rules, and why.
 
 | where | rule | why it stays |
 |---|---|---|
-| `core/sdf_coverage.glsl` | §1 second underscore for internals | `kit_sd_coverage_internal` uses single underscores for browser WebGL compatibility. |
 | `transitions/dissolve.glsl` | §3 no `sin()` hashes | Renders exactly like the engine's deprecated built-in `dissolve`, so films can move to the kit without their pixels changing. A deterministic dissolve can come as a new transition. |
 | `transitions/wipe.glsl` | §2 screen lengths in frame heights | `softness` is in uv units (0..1 on each axis), as in the engine's built-in `wipe`, for the same reason. |
