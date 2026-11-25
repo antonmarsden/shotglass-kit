@@ -246,7 +246,7 @@ jobs:
 
       # Golden picture of tests/layers (fx/ and blend/): the 11 blend modes over the same
       # picture and swatch (one second each), then grade, grain, vignette, letterbox,
-      # place and the bloom recipe with screen and with add. Same tolerance and update
+      # place, bloom with screen and add, and chroma key. Same tolerance and update
       # steps as above. Moving SHOTGLASS_REV can change it: the engine does the compositing.
       - name: Layers film matches its golden picture
         run: |
@@ -254,7 +254,7 @@ jobs:
           xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 4 --out golden-out/layers.png \
             --at "$LAYERS_FRAMES" --compare tests/golden/layers.png
         env:
-          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5
+          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5,key-backdrop+0.5
 
       # Every kit transition, with and without parameters, starts exactly on the old shot
       # and ends exactly on the new one (zero tolerance). The engine's own selftest checks
