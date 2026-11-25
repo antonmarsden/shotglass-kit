@@ -78,3 +78,19 @@ uniforms.uDolly = { keys = [[0, 0.0], [3, 7.0]], ease = "smoother" }
 uniforms.uRoll = 0.0
 uniforms.uVertigo = 1.0
 uniforms.uAperture = 0.0
+
+[[shot]]
+id = "cellular"
+scene = "scenes/cellular.glsl"
+duration = 2
+
+[[shot]]
+id = "simplex-flow"
+scene = "scenes/simplex-flow.glsl"
+duration = 3
+
+[[shot]]
+id = "blue-noise"
+scene = "scenes/blue-noise.glsl"
+duration = 2
+channels = [{ file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]

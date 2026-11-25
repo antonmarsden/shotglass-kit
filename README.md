@@ -52,6 +52,24 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 `shotglass.lock` next to `shotglass.toml`; commit that file. The names on the left of
 `[libraries]` are yours to choose: they're the prefix in `#include <kit/…>`.
 
+### Noise patterns
+
+`kit_cellular_noise` returns the two nearest feature distances for patterns such
+as stone and scales. `kit_simplex_flow` returns rotating simplex noise and its
+spatial gradient, with optional rectangular tiling. The
+[test film](tests/film/movie.toml) includes a shot for each pattern.
+
+For blue-noise dithering, bind the CC0 tile as a data texture in a shot:
+
+```toml
+channels = [{ file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]
+```
+
+Fetch one red-channel texel per pixel, wrapping the pixel coordinates by the tile
+size. Pass `(255.0 * texel + 0.5) / 256.0` to `kit_dither` as the threshold.
+The [blue-noise scene](tests/film/scenes/blue-noise.glsl) shows the same six-level
+ramp with and without dithering. See [NOTICE](NOTICE) for source and licence details.
+
 ### Transitions
 
 Until shotglass can name library transitions directly (`type = "transitions/iris"`),

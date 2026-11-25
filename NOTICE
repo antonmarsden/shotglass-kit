@@ -1,7 +1,18 @@
 shotglass-kit
 Copyright (c) 2026 Anton Marsden
 
-Licensed under either of the Apache License, Version 2.0 (LICENSE-APACHE) or the
-MIT license (LICENSE-MIT), at your option.
+Except where otherwise noted, Shotglass Kit is licensed under either the MIT
+License (LICENSE-MIT) or the Apache License, Version 2.0 (LICENSE-APACHE), at
+your option. Third-party material is included under the terms identified below.
 
 https://github.com/antonmarsden/shotglass-kit
+
+core/noise.glsl includes an adaptation of psrdnoise2.glsl:
+https://github.com/stegu/psrdnoise/blob/main/src/psrdnoise2.glsl
+
+Copyright (c) 2021 Stefan Gustavson and Ian McEwan. MIT license.
+
+core/textures/blue-noise-64.png is Christoph Peters' 64_64/LDR_LLL1_0.png,
+licensed CC0 1.0 Universal.
+https://momentsingraphics.de/BlueNoise.html
+https://github.com/Calinou/free-blue-noise-textures/blob/master/64_64/LDR_LLL1_0.png
