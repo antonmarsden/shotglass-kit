@@ -8,7 +8,7 @@
 // exactly, so a note ends in true silence at a known time.
 // sound: yes
 
-float kit__env_fall(float x) {
+float kit_private_env_fall(float x) {
     x = 1.0 - clamp(x, 0.0, 1.0);
     return x * x;
 }
@@ -22,13 +22,13 @@ float kit__env_fall(float x) {
 float kit_env_ar(float t, float attack, float release) {
     if (t < 0.0) return 0.0;
     if (t < attack) return t / attack;
-    return kit__env_fall((t - attack) / max(release, 1e-6));
+    return kit_private_env_fall((t - attack) / max(release, 1e-6));
 }
 
 // Level of an ADSR while the key is held (no release yet).
-float kit__env_ads(float t, float attack, float decay, float sustain) {
+float kit_private_env_ads(float t, float attack, float decay, float sustain) {
     if (t < attack) return t / attack;
-    return sustain + (1.0 - sustain) * kit__env_fall((t - attack) / max(decay, 1e-6));
+    return sustain + (1.0 - sustain) * kit_private_env_fall((t - attack) / max(decay, 1e-6));
 }
 
 // kit_env_adsr(t, held, attack, decay, sustain, release): the classic synth envelope.
@@ -46,7 +46,7 @@ float kit_env_adsr(float t, float held, float attack, float decay, float sustain
     if (t < 0.0) return 0.0;
     sustain = clamp(sustain, 0.0, 1.0);
     held = max(held, 0.0);
-    if (t < held) return kit__env_ads(t, attack, decay, sustain);
-    return kit__env_ads(held, attack, decay, sustain)
-         * kit__env_fall((t - held) / max(release, 1e-6));
+    if (t < held) return kit_private_env_ads(t, attack, decay, sustain);
+    return kit_private_env_ads(held, attack, decay, sustain)
+         * kit_private_env_fall((t - held) / max(release, 1e-6));
 }

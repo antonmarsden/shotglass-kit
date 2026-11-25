@@ -52,6 +52,43 @@ void test_simplex_flow_rotation() {
     expect_near(rotated, -g, 1e-6);
 }
 
+void test_curl_noise_rotates_gradient(vec2 c) {
+    vec2 p = (2.0 * c - 1.0) * 1048575.0;
+    float angle = 6.28318531 * c.x;
+    ivec2 period = ivec2(c.x < 0.5 ? 0 : 1048576, c.y < 0.5 ? 0 : 1048576);
+    vec2 gradient;
+    kit_simplex_flow(p, period, angle, gradient);
+    expect_near(kit_curl_noise(p, period, angle), vec2(gradient.y, -gradient.x), 1e-5);
+}
+
+void test_curl_noise_tiles_and_loops(vec2 c) {
+    // Binary fractions keep period shifts exact, including across negative coordinates.
+    vec2 p = (floor(c * 255.0 + 0.5) - 128.0) / 16.0;
+    ivec2 period = ivec2(6, 4);
+    float angle = 6.28318531 * c.x;
+    vec2 field = kit_curl_noise(p, period, angle);
+    expect_near(kit_curl_noise(p + vec2(6.0, 0.0), period, angle), field, 1e-5);
+    expect_near(kit_curl_noise(p - vec2(0.0, 4.0), period, angle), field, 1e-5);
+
+    // Endpoints and periods of the visual fixture's base field.
+    vec2 start = kit_curl_noise(p, period, 0.0);
+    expect_near(kit_curl_noise(p, period, 6.28318531), start, 1e-5);
+}
+
+void test_curl_noise_divergence(vec2 c) {
+    // Small, exactly representable coordinates keep the step well above the
+    // local float spacing. The tolerance allows central-difference truncation
+    // and roundoff when subtracting neighbouring field values.
+    vec2 p = (floor(c * 255.0 + 0.5) - 128.0) / 16.0;
+    ivec2 period = ivec2(7, 4);
+    float angle = 6.28318531 * c.y;
+    const float h = 0.001953125;
+    vec2 dx = vec2(h, 0.0), dy = vec2(0.0, h);
+    float du = kit_curl_noise(p + dx, period, angle).x - kit_curl_noise(p - dx, period, angle).x;
+    float dv = kit_curl_noise(p + dy, period, angle).y - kit_curl_noise(p - dy, period, angle).y;
+    expect_near((du + dv) / (2.0 * h), 0.0, 0.002);
+}
+
 void test_dither() {
     expect_eq(kit_dither(0.0, 8, 0.01), 0.0);
     expect_eq(kit_dither(1.0, 256, 0.99), 1.0);

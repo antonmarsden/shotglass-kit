@@ -40,8 +40,8 @@ struct kit_text_box {
     vec4 meta;
 };
 
-// kit__text_box(size, meta, texel, scale): fill in a box from a texel position.
-kit_text_box kit__text_box(vec2 size, vec4 meta, vec2 texel, float scale) {
+// kit_private_text_box(size, meta, texel, scale): fill in a box from a texel position.
+kit_text_box kit_private_text_box(vec2 size, vec4 meta, vec2 texel, float scale) {
     float em = max(meta.x, 1e-6);
     float pad = meta.w;
     vec2 inner = max(size - 2.0 * pad, vec2(1e-6));
@@ -77,7 +77,7 @@ kit_text_box kit_text_place_anchor(vec3 res, vec4 meta, vec2 fragCoord, vec2 fra
     float pad = meta.w;
     vec2 at = vec2(pad + anchor.x * (size.x - 2.0 * pad), pad + (1.0 - anchor.y) * (size.y - 2.0 * pad));
     vec2 d = (fragCoord - pos * frame) / scale;
-    return kit__text_box(size, meta, at + vec2(d.x, -d.y), scale);
+    return kit_private_text_box(size, meta, at + vec2(d.x, -d.y), scale);
 }
 
 // kit_text_place(res, meta, fragCoord, frame, pos, em): place a block with its text
@@ -103,7 +103,7 @@ kit_text_box kit_text_place_baseline(vec3 res, vec4 meta, vec2 fragCoord, vec2 f
     float pad = meta.w;
     vec2 at = vec2(pad + align * (size.x - 2.0 * pad), meta.y);
     vec2 d = (fragCoord - pos * frame) / scale;
-    return kit__text_box(size, meta, at + vec2(d.x, -d.y), scale);
+    return kit_private_text_box(size, meta, at + vec2(d.x, -d.y), scale);
 }
 
 // kit_text_offset(b, offset): the same box looking at another point of the block, as if
@@ -112,7 +112,7 @@ kit_text_box kit_text_place_baseline(vec3 res, vec4 meta, vec2 fragCoord, vec2 f
 //   e.g. float back = kit_text_edge(iChannel0, kit_text_offset(b, vec2(0.03, -0.03)), 0.0);
 kit_text_box kit_text_offset(kit_text_box b, vec2 offset) {
     vec2 t = b.texel - vec2(offset.x, -offset.y) * b.meta.x;
-    return kit__text_box(b.size, b.meta, t, b.scale);
+    return kit_private_text_box(b.size, b.meta, t, b.scale);
 }
 
 // kit_text_reach(meta): how far outside the letters the distance field reaches, in ems

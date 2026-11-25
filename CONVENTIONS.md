@@ -11,10 +11,10 @@ with the reason.
 ## 1. Names
 
 - **Prefix.** Public functions, structs and constants start with the library's prefix:
-  `kit_` for everything in this repository. Use `kit_internal_` for new private
-  declarations to avoid double underscores in WebGL identifiers. Existing private
-  declarations also use `kit__`. A third-party library built on these conventions
-  uses its own prefix (`toon_`, `toon_internal_`).
+  `kit_` for everything in this repository. Internals start with `kit_private_`
+  (`kit_private_unit`). A third-party library uses its own prefixes (`toon_`,
+  `toon_private_`). Avoid two consecutive underscores in GLSL identifiers for
+  compatibility with browsers that reject them.
 - **Shape:** `kit_<area>_<thing>` when a file holds a family (`kit_sd_box`,
   `kit_op_smin`, `kit_ease_smooth`); plain `kit_<thing>` otherwise (`kit_hash`,
   `kit_fbm`, `kit_aces`). Lower case, words split with `_`.
@@ -189,9 +189,9 @@ So:
   `tests/instruments`, `tests/mix`) is compared with `tests/golden/<film>.wav` (8 kHz, rendered on Mesa) within `shotglass wav --compare`'s
   default tolerance. A change that should keep the samples the same must keep passing;
   one that changes them on purpose re-blesses the reference in the same commit.
-- **Everything passes `shotglass check tests/film --web --no-gpu`**: glslang at GLSL
-  3.30 core and as GLSL ES 3.00. Your own GPU accepting the code proves nothing
-  (NVIDIA accepts code other drivers reject).
+- **Everything passes `shotglass check tests/film --web --strict --no-gpu`**: glslang at GLSL
+  3.30 core and as GLSL ES 3.00, with browser compatibility warnings treated as
+  errors. CI also compiles the simplex-flow scene in Chromium WebGL 2.
 - **Look at it.** `shotglass strip tests/film --count 8 --out strip.png` (CI uploads
   one too). A change that should keep the pixels the same should keep the strip the same.
 - **Transitions** show exactly the old shot at `progress = 0` and exactly the new one

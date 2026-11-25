@@ -22,17 +22,17 @@
 #define HI 16.0
 #endif
 
-float kit__q_level(vec2 p) { return 255.0 * kit_q_luma(getFrame(p / iResolution.xy).rgb); }
+float kit_private_q_level(vec2 p) { return 255.0 * kit_q_luma(getFrame(p / iResolution.xy).rgb); }
 
 // The slope at p along dir, in levels per pixel (central difference).
-float kit__q_slope(vec2 p, vec2 dir) { return 0.5 * (kit__q_level(p + dir) - kit__q_level(p - dir)); }
+float kit_private_q_slope(vec2 p, vec2 dir) { return 0.5 * (kit_private_q_level(p + dir) - kit_private_q_level(p - dir)); }
 
-float kit__q_soft_along(vec2 p, vec2 dir) {
-    return kit_q_soft(kit__q_slope(p, dir), kit__q_slope(p - 2.0 * dir, dir),
-                      kit__q_slope(p + 2.0 * dir, dir), LO, HI);
+float kit_private_q_soft_along(vec2 p, vec2 dir) {
+    return kit_q_soft(kit_private_q_slope(p, dir), kit_private_q_slope(p - 2.0 * dir, dir),
+                      kit_private_q_slope(p + 2.0 * dir, dir), LO, HI);
 }
 
 void mainMetric(out vec4 value, in vec2 fragCoord) {
-    float s = max(kit__q_soft_along(fragCoord, vec2(1.0, 0.0)), kit__q_soft_along(fragCoord, vec2(0.0, 1.0)));
+    float s = max(kit_private_q_soft_along(fragCoord, vec2(1.0, 0.0)), kit_private_q_soft_along(fragCoord, vec2(0.0, 1.0)));
     value = vec4(kit_q_heat(0.6 * s), s);
 }

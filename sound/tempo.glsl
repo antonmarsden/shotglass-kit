@@ -13,8 +13,8 @@
 // it starts at the shot's time 0.
 // sound: yes
 
-// Steps per minute, clamped so kit__beat_pos stays inside int at rates up to 192 kHz.
-int kit__beat_den(int bpm, int per_beat) {
+// Steps per minute, clamped so kit_private_beat_pos stays inside int at rates up to 192 kHz.
+int kit_private_beat_den(int bpm, int per_beat) {
     return min(max(bpm, 1) * max(per_beat, 1), 10000);
 }
 
@@ -22,9 +22,9 @@ int kit__beat_den(int bpm, int per_beat) {
 // With s = whole seconds and r = the samples left over, the position in steps is
 // samp * den / (60 * rate) = (s * den) / 60 + r * den / (60 * rate), den = steps per
 // minute. Splitting s * den into 60 * a + b keeps every product well inside int.
-ivec2 kit__beat_pos(int samp, int rate, int bpm, int per_beat) {
+ivec2 kit_private_beat_pos(int samp, int rate, int bpm, int per_beat) {
     rate = max(rate, 1);
-    int den = kit__beat_den(bpm, per_beat);
+    int den = kit_private_beat_den(bpm, per_beat);
     int minute = 60 * rate;
     int shift = 0;
     if (samp < 0) {   // move up by whole minutes (a whole number of steps), then back
@@ -51,7 +51,7 @@ ivec2 kit__beat_pos(int samp, int rate, int bpm, int per_beat) {
 //   e.g. int beat = kit_beat_step(samp, int(iSampleRate), 120, 1);
 //        int six  = kit_beat_step(samp, int(iSampleRate), 120, 4) % 16;   // 16 steps a bar
 int kit_beat_step(int samp, int rate, int bpm, int per_beat) {
-    return kit__beat_pos(samp, rate, bpm, per_beat).x;
+    return kit_private_beat_pos(samp, rate, bpm, per_beat).x;
 }
 
 // kit_beat_since(samp, rate, bpm, per_beat): seconds since the current step began.
@@ -61,8 +61,8 @@ int kit_beat_step(int samp, int rate, int bpm, int per_beat) {
 //   e.g. float since = kit_beat_since(samp, int(iSampleRate), 120, 2);
 //        float v = kit_env_ar(since, 0.002, 0.2);   // a hit on every eighth note
 float kit_beat_since(int samp, int rate, int bpm, int per_beat) {
-    int into = kit__beat_pos(samp, rate, bpm, per_beat).y;   // of 60 * rate per step
-    float den = float(kit__beat_den(bpm, per_beat));
+    int into = kit_private_beat_pos(samp, rate, bpm, per_beat).y;   // of 60 * rate per step
+    float den = float(kit_private_beat_den(bpm, per_beat));
     return float(into) / (den * float(max(rate, 1)));
 }
 

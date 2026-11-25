@@ -14,8 +14,8 @@
 
 // --- Eases -----------------------------------------------------------------------
 
-// kit__back_in(x, s): the cubic behind the back eases; x already clamped.
-float kit__back_in(float x, float s) { return x * x * ((s + 1.0) * x - s); }
+// kit_private_back_in(x, s): the cubic behind the back eases; x already clamped.
+float kit_private_back_in(float x, float s) { return x * x * ((s + 1.0) * x - s); }
 
 // kit_ease_back_in(x), kit_ease_back_in(x, s): pull back below 0 first, then
 // accelerate to 1 (a wind-up built into the ease).
@@ -25,7 +25,7 @@ float kit__back_in(float x, float s) { return x * x * ((s + 1.0) * x - s); }
 //   ->  about -0.1..1 with the default; 0 at x = 0, 1 at x = 1
 //   e.g. float y = mix(a, b, kit_ease_back_in(kit_tween(1.0, 1.5, iShotTime)));
 float kit_ease_back_in(float x, float s) {
-    return kit__back_in(clamp(x, 0.0, 1.0), max(s, 0.0));
+    return kit_private_back_in(clamp(x, 0.0, 1.0), max(s, 0.0));
 }
 float kit_ease_back_in(float x) { return kit_ease_back_in(x, 1.70158); }
 
@@ -36,7 +36,7 @@ float kit_ease_back_in(float x) { return kit_ease_back_in(x, 1.70158); }
 //   ->  0..about 1.1 with the default; 0 at x = 0, 1 at x = 1
 //   e.g. float y = mix(a, b, kit_ease_back_out(iShotProgress, 2.5));
 float kit_ease_back_out(float x, float s) {
-    return 1.0 - kit__back_in(1.0 - clamp(x, 0.0, 1.0), max(s, 0.0));
+    return 1.0 - kit_private_back_in(1.0 - clamp(x, 0.0, 1.0), max(s, 0.0));
 }
 float kit_ease_back_out(float x) { return kit_ease_back_out(x, 1.70158); }
 
@@ -50,8 +50,8 @@ float kit_ease_back_out(float x) { return kit_ease_back_out(x, 1.70158); }
 float kit_ease_back_inout(float x, float s) {
     x = clamp(x, 0.0, 1.0);
     s = max(s, 0.0) * 1.525;
-    return x < 0.5 ? 0.5 * kit__back_in(2.0 * x, s)
-                   : 1.0 - 0.5 * kit__back_in(2.0 - 2.0 * x, s);
+    return x < 0.5 ? 0.5 * kit_private_back_in(2.0 * x, s)
+                   : 1.0 - 0.5 * kit_private_back_in(2.0 - 2.0 * x, s);
 }
 float kit_ease_back_inout(float x) { return kit_ease_back_inout(x, 1.70158); }
 

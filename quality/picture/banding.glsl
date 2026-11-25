@@ -23,17 +23,17 @@
 #define MAXSTEP 2.0
 #endif
 
-vec3 kit__q_px(vec2 p) { return getFrame(p / iResolution.xy).rgb * 255.0; }
+vec3 kit_private_q_px(vec2 p) { return getFrame(p / iResolution.xy).rgb * 255.0; }
 
 // Whether the edge between fragCoord and fragCoord + dir is a band edge.
-float kit__q_band_along(vec2 fragCoord, vec2 dir) {
-    vec3 a = kit__q_px(fragCoord), b = kit__q_px(fragCoord + dir);
+float kit_private_q_band_along(vec2 fragCoord, vec2 dir) {
+    vec3 a = kit_private_q_px(fragCoord), b = kit_private_q_px(fragCoord + dir);
     float before = 0.0, after = 0.0;
     int n = int(RUN);
     vec3 pa = a, pb = b;
     for (int k = 1; k < n; k++) {
-        vec3 qa = kit__q_px(fragCoord - float(k) * dir);
-        vec3 qb = kit__q_px(fragCoord + float(k + 1) * dir);
+        vec3 qa = kit_private_q_px(fragCoord - float(k) * dir);
+        vec3 qb = kit_private_q_px(fragCoord + float(k + 1) * dir);
         before = max(before, kit_q_diff(qa, pa));
         after = max(after, kit_q_diff(qb, pb));
         pa = qa;
@@ -44,7 +44,7 @@ float kit__q_band_along(vec2 fragCoord, vec2 dir) {
 }
 
 void mainMetric(out vec4 value, in vec2 fragCoord) {
-    float b = max(kit__q_band_along(fragCoord, vec2(1.0, 0.0)),
-                  kit__q_band_along(fragCoord, vec2(0.0, 1.0)));
+    float b = max(kit_private_q_band_along(fragCoord, vec2(1.0, 0.0)),
+                  kit_private_q_band_along(fragCoord, vec2(0.0, 1.0)));
     value = vec4(kit_q_heat(b), b);
 }

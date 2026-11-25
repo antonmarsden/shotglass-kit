@@ -14,7 +14,7 @@ on:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "efaac0ffd43e8509747d9efb63aab995c0b49274"
+  SHOTGLASS_REV: "af2b5cee6c878e5a270e87936208731ebcbf961c"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         env:
           REV: ${{ steps.rev.outputs.sha }}
-        run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$REV" shotglass
+        run: cargo install --locked --git https://github.com/antonmarsden/shotglass --rev "$REV" --no-default-features --features strict-glsl shotglass
 
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
@@ -99,7 +99,7 @@ jobs:
         run: |
           missing=0
           for f in fx/*.glsl blend/*.glsl quality/*.glsl; do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sed '/^kit_internal_/d' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rlE --include='*.glsl' "\b$fn *\(" "$(dirname "$f")" | grep -qvxF "$f"; then
                 echo "::error file=$f::$fn is never called by a pass in its library"
                 missing=1
@@ -107,7 +107,7 @@ jobs:
             done
           done
           for f in core/*.glsl sound/*.glsl text/*.glsl; do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sed '/^kit_internal_/d' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
                 missing=1
@@ -123,7 +123,7 @@ jobs:
         run: |
           missing=0
           for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
-            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//' | sed '/^kit_internal_/d' | sort -u); do
+            for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
                 missing=1
@@ -173,17 +173,24 @@ jobs:
           done
           exit $missing
 
+      - name: WebGL 2 browser check
+        run: |
+          npm install --prefix "$RUNNER_TEMP/kit-webgl" --no-audit --no-fund playwright@1.56.1
+          export CHROME_BIN="$(command -v google-chrome)"
+          export NODE_PATH="$RUNNER_TEMP/kit-webgl/node_modules"
+          node .github/check-webgl.cjs
+
       # glslang, independent of any driver: GLSL 3.30 core and GLSL ES 3.00 (WebGL 2).
       - name: Strict GLSL check
         run: |
-          shotglass check tests/film --web --no-gpu
-          shotglass check tests/animation --web --no-gpu
-          shotglass check tests/sound --web --no-gpu
-          shotglass check tests/instruments --web --no-gpu
-          shotglass check tests/mix --web --no-gpu
-          shotglass check tests/transitions --web --no-gpu
-          shotglass check tests/text --web --no-gpu
-          shotglass check tests/layers --web --no-gpu
+          shotglass check tests/film --web --strict --no-gpu
+          shotglass check tests/animation --web --strict --no-gpu
+          shotglass check tests/sound --web --strict --no-gpu
+          shotglass check tests/instruments --web --strict --no-gpu
+          shotglass check tests/mix --web --strict --no-gpu
+          shotglass check tests/transitions --web --strict --no-gpu
+          shotglass check tests/text --web --strict --no-gpu
+          shotglass check tests/layers --web --strict --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
@@ -191,7 +198,7 @@ jobs:
       # the quality/ metric tests (tests/unit/quality/*.test.toml): each metric must pass
       # its must-pass cases and fail its must-fail ones.
       - name: Unit tests
-        run: xvfb-run -a shotglass test tests/unit
+        run: xvfb-run -a shotglass test tests/unit --web --strict
 
       # Mesa's software OpenGL: compiles every shader for real and renders frames.
       - name: Render on Mesa
@@ -246,7 +253,7 @@ jobs:
 
       # Golden picture of tests/layers (fx/ and blend/): the 11 blend modes over the same
       # picture and swatch (one second each), then grade, grain, vignette, letterbox,
-      # place and the bloom recipe with screen and with add. Same tolerance and update
+      # place, bloom with screen and add, and chroma key. Same tolerance and update
       # steps as above. Moving SHOTGLASS_REV can change it: the engine does the compositing.
       - name: Layers film matches its golden picture
         run: |
@@ -254,7 +261,7 @@ jobs:
           xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 4 --out golden-out/layers.png \
             --at "$LAYERS_FRAMES" --compare tests/golden/layers.png
         env:
-          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5
+          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5,key-backdrop+0.5
 
       # Every kit transition, with and without parameters, starts exactly on the old shot
       # and ends exactly on the new one (zero tolerance). The engine's own selftest checks

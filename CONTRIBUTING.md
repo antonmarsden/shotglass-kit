@@ -17,14 +17,15 @@ public domain, CC0) is fine if you name its source and licence in the file.
 
 ## Adding a function
 
-- **Prefix** public functions `kit_` and helpers `kit__`.
+- **Prefix** public functions `kit_` and helpers `kit_private_`.
 - **Header contract** above every public function: what it does, each parameter with
   units and range, what it returns, cost, and a one-line example. Copy the style of
   `core/noise.glsl`.
 - **Portable GLSL:** GLSL 3.30 core features only, and valid GLSL ES 3.00: float
   literals (`1.0`, not `1`), `U` on unsigned literals, no implicit int→float.
-  `shotglass check tests/film --web --no-gpu` checks this; your GPU's driver alone
-  isn't proof (NVIDIA accepts code others reject).
+  `shotglass check tests/film --web --strict --no-gpu` checks both dialects with glslang.
+  The strict web check fails on browser compatibility warnings. CI also compiles
+  the simplex-flow scene with Chromium's WebGL 2 compiler.
 - **Deterministic:** no `sin()` hashes or other GPU-dependent tricks in new code. Use
   `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
@@ -94,7 +95,7 @@ colour, plus a pass `blend/<mode>.glsl`: `getBase`, `getLayer`, `kit_blend_sourc
 
 Add a layer for it to `tests/layers/movie.toml` (a second of film, in the order the
 header comment lists), unit-test its function in `tests/unit/fx` or `tests/unit/blend`,
-run `shotglass check tests/layers --web --no-gpu`, look at the strip, and re-bless
+run `shotglass check tests/layers --web --strict --no-gpu`, look at the strip, and re-bless
 `tests/golden/layers.png` (below). A new folder starts at version 0.1.0 in its
 `library.toml`; `requires_shotglass` is the engine release that has the layer feature it
 uses.
@@ -142,7 +143,7 @@ to an animation helper doesn't touch `film.png`; everything below applies to it 
 Likewise `tests/text` (text/, with its own fonts) and `tests/golden/text.png`, checked by the "Text
 film matches its golden picture" step, and `tests/layers` (fx/ and blend/) with
 `tests/golden/layers.png`, checked by the "Layers film matches its golden picture" step
-(18 frames, one per second: each blend mode, then each fx pass).
+(one frame per second: each blend mode, then each fx example).
 
 On a failure, the run's `golden-failures` artifact holds the actual strip (`film.png`)
 and `film.diff.png` (differing pixels in magenta). A change that should keep the pictures

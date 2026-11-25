@@ -7,7 +7,7 @@
 
 // Fraction of a square pixel below an edge in the locally linear distance field.
 // a and b are the larger and smaller projected half-extents of the pixel.
-float kit_internal_sd_coverage(float edge, float a, float b) {
+float kit_private_sd_coverage(float edge, float a, float b) {
     float x = abs(edge);
     float tail;
     if (x >= a + b) {
@@ -30,7 +30,7 @@ float kit_sd_fill(float d) {
     vec2 g = abs(vec2(dFdx(d), dFdy(d)));
     float scale = max(g.x, g.y);
     if (scale == 0.0) return 0.5 * (1.0 - sign(d));
-    return kit_internal_sd_coverage(-d / scale, 0.5, 0.5 * (min(g.x, g.y) / scale));
+    return kit_private_sd_coverage(-d / scale, 0.5, 0.5 * (min(g.x, g.y) / scale));
 }
 
 // kit_sd_outline(d, width_px): antialiased coverage of a band centred on the zero contour.
@@ -47,6 +47,6 @@ float kit_sd_outline(float d, float width_px) {
     float half_width = 0.5 * width_px * length(vec2(1.0, slope));
     float distance = d / scale;
     // Integrate both edges against the same footprint, even when they overlap.
-    return kit_internal_sd_coverage(half_width - distance, 0.5, 0.5 * slope)
-         - kit_internal_sd_coverage(-half_width - distance, 0.5, 0.5 * slope);
+    return kit_private_sd_coverage(half_width - distance, 0.5, 0.5 * slope)
+         - kit_private_sd_coverage(-half_width - distance, 0.5, 0.5 * slope);
 }

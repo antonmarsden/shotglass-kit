@@ -20,19 +20,19 @@ uint kit_hash_u(uvec3 v) {
 }
 
 // 24 random bits as a float in 0..1 (exact in float32).
-float kit__unit(uint h) { return float(h >> 8) * (1.0 / 16777216.0); }
+float kit_private_unit(uint h) { return float(h >> 8) * (1.0 / 16777216.0); }
 
 // kit_hash(c): a random number in 0..1 for an integer cell (or frame, or seed).
 //   e.g. float r = kit_hash(ivec2(floor(uv * 10.0)));   // one value per grid cell
-float kit_hash(int c) { return kit__unit(kit_hash_u(uint(c))); }
-float kit_hash(ivec2 c) { return kit__unit(kit_hash_u(uvec2(c))); }
-float kit_hash(ivec3 c) { return kit__unit(kit_hash_u(uvec3(c))); }
+float kit_hash(int c) { return kit_private_unit(kit_hash_u(uint(c))); }
+float kit_hash(ivec2 c) { return kit_private_unit(kit_hash_u(uvec2(c))); }
+float kit_hash(ivec3 c) { return kit_private_unit(kit_hash_u(uvec3(c))); }
 
 // kit_hash(p): a random number in 0..1 for a float position, from its exact bits:
 // any change to p gives an unrelated value (0.0 and -0.0 differ). For smooth
 // randomness use the noise below.
-float kit_hash(vec2 p) { return kit__unit(kit_hash_u(floatBitsToUint(p))); }
-float kit_hash(vec3 p) { return kit__unit(kit_hash_u(floatBitsToUint(p))); }
+float kit_hash(vec2 p) { return kit_private_unit(kit_hash_u(floatBitsToUint(p))); }
+float kit_hash(vec3 p) { return kit_private_unit(kit_hash_u(floatBitsToUint(p))); }
 
 // kit_value_noise(p): smooth noise, cells 1 unit wide.
 //   p   any position; scale it for bigger or smaller blobs
@@ -62,7 +62,7 @@ float kit_value_noise(vec3 p) {
 
 // One of 8 gradient directions (4 diagonal, 4 axis), all of length sqrt(2), chosen
 // by bits of h: no trigonometry, so it's exact everywhere.
-vec2 kit__gradient(uint h) {
+vec2 kit_private_gradient(uint h) {
     vec2 g = vec2((h & 1U) == 0U ? 1.0 : -1.0, (h & 2U) == 0U ? 1.0 : -1.0);
     if ((h & 4U) != 0U) {
         g = (h & 8U) == 0U ? vec2(g.x * 1.41421356, 0.0) : vec2(0.0, g.y * 1.41421356);
@@ -79,10 +79,10 @@ float kit_gradient_noise(vec2 p) {
     vec2 i = floor(p), f = fract(p);
     uvec2 c = uvec2(ivec2(i));
     vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-    float a = dot(kit__gradient(kit_hash_u(c)), f);
-    float b = dot(kit__gradient(kit_hash_u(c + uvec2(1U, 0U))), f - vec2(1.0, 0.0));
-    float d = dot(kit__gradient(kit_hash_u(c + uvec2(0U, 1U))), f - vec2(0.0, 1.0));
-    float e = dot(kit__gradient(kit_hash_u(c + uvec2(1U, 1U))), f - vec2(1.0, 1.0));
+    float a = dot(kit_private_gradient(kit_hash_u(c)), f);
+    float b = dot(kit_private_gradient(kit_hash_u(c + uvec2(1U, 0U))), f - vec2(1.0, 0.0));
+    float d = dot(kit_private_gradient(kit_hash_u(c + uvec2(0U, 1U))), f - vec2(0.0, 1.0));
+    float e = dot(kit_private_gradient(kit_hash_u(c + uvec2(1U, 1U))), f - vec2(1.0, 1.0));
     return mix(mix(a, b, u.x), mix(d, e, u.x), u.y);
 }
 
@@ -104,8 +104,8 @@ vec2 kit_cellular_noise(vec2 p) {
         for (int x = -1; x <= 1; ++x) {
             ivec2 offset = ivec2(x, y);
             uvec2 candidate = cell + uvec2(offset);
-            vec2 jitter = vec2(kit__unit(kit_hash_u(uvec3(candidate, 0U))),
-                               kit__unit(kit_hash_u(uvec3(candidate, 1U))));
+            vec2 jitter = vec2(kit_private_unit(kit_hash_u(uvec3(candidate, 0U))),
+                               kit_private_unit(kit_hash_u(uvec3(candidate, 1U))));
             vec2 delta = vec2(offset) + 0.375 + 0.25 * jitter - local;
             float distance_squared = dot(delta, delta);
             nearest.y = min(nearest.y, max(nearest.x, distance_squared));
@@ -115,7 +115,7 @@ vec2 kit_cellular_noise(vec2 p) {
     return sqrt(nearest);
 }
 
-int kit__noise_wrap(int cell, int period) {
+int kit_private_noise_wrap(int cell, int period) {
     if (period == 0) return cell;
     int remainder = abs(cell) % period;
     return cell < 0 && remainder != 0 ? period - remainder : remainder;
@@ -168,9 +168,9 @@ float kit_simplex_flow(vec2 p, ivec2 period, float angle, out vec2 gradient) {
         ivec2 corner = corners[i];
         int twice_x = 2 * corner.x - corner.y;
         vec2 delta = p - vec2(0.5 * float(twice_x), float(corner.y));
-        ivec2 key = ivec2(kit__noise_wrap(twice_x, 2 * period.x),
-                          kit__noise_wrap(corner.y, period.y));
-        vec2 direction = rotation * (kit__gradient(kit_hash_u(uvec2(key))) * 0.70710678);
+        ivec2 key = ivec2(kit_private_noise_wrap(twice_x, 2 * period.x),
+                          kit_private_noise_wrap(corner.y, period.y));
+        vec2 direction = rotation * (kit_private_gradient(kit_hash_u(uvec2(key))) * 0.70710678);
         float weight = max(0.8 - dot(delta, delta), 0.0);
         float w2 = weight * weight;
         float w4 = w2 * w2;
@@ -180,6 +180,19 @@ float kit_simplex_flow(vec2 p, ivec2 period, float angle, out vec2 gradient) {
     }
     gradient *= 10.9;
     return 10.9 * value;
+}
+
+// kit_curl_noise(p, period, angle): divergence-free 2D field from simplex flow.
+//   p       position in lattice units, abs(p) < 2^20 per axis
+//   period  0 disables tiling on that axis, otherwise 1..2^20 units (even on y)
+//   angle   gradient rotation in radians, one turn per loop (0..2*pi)
+//   ->      unnormalised clockwise-rotated gradient (dn/dy, -dn/dx), in noise per lattice unit
+//   cost: 1 simplex flow evaluation
+//   e.g. vec2 curl = kit_curl_noise(uv * 8.0, ivec2(8), iTime);
+vec2 kit_curl_noise(vec2 p, ivec2 period, float angle) {
+    vec2 gradient;
+    kit_simplex_flow(p, period, angle, gradient);
+    return vec2(gradient.y, -gradient.x);
 }
 
 // kit_dither(value, levels, threshold): rounds a normalized value using a noise threshold.
