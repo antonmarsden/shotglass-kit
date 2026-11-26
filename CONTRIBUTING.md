@@ -158,7 +158,7 @@ change:
 
   ```sh
   xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out film.png \
-    --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3,cellular+1,simplex-flow+1,blue-noise+1 \
+    --at dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3,cellular+1,simplex-flow+1,blue-noise+1,sdf-coverage+0.625 \
     --compare tests/golden/film.png --bless
   ```
 

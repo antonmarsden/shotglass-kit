@@ -224,7 +224,7 @@ jobs:
           xvfb-run -a shotglass strip tests/film --size 320x180 --cols 4 --out golden-out/film.png \
             --at "$FILM_FRAMES" --compare tests/golden/film.png
         env:
-          FILM_FRAMES: dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3,cellular+1,simplex-flow+1,blue-noise+1
+          FILM_FRAMES: dusk+2.2,house+1.8,toys+1.6,garden+1.8,camera-orbit+2.6,camera-vertigo+2.0,toys+0.4,house-again+0.3,cellular+1,simplex-flow+1,blue-noise+1,sdf-coverage+0.625
 
       # Golden picture of tests/animation (core/animate.glsl): the crouch, the leap, the
       # top, just after the first landing (on ones squashed, on twos still holding the

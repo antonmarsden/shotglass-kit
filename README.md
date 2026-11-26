@@ -407,6 +407,32 @@ Start with the header's typical limits, run `shotglass quality`, look at the hea
 then let `shotglass quality --tighten` ratchet them. Measured numbers depend on the
 frame size and on the renderer (a little), so tighten with a margin.
 
+### 2D signed-distance coverage
+
+Include `core/sdf_coverage.glsl` in a picture shader to convert a signed distance
+(negative inside) to coverage in 0..1. `kit_sd_fill` covers the inside of the shape.
+`kit_sd_outline` covers a band centred on the zero contour. Its width is the full
+width in raster pixels, including fractional widths.
+
+```glsl
+#include <kit/sdf.glsl>
+#include <kit/sdf_coverage.glsl>
+
+// In mainImage:
+vec2 p = (fragCoord - 0.5 * iResolution.xy) / iResolution.y;
+float d = kit_sd_circle(p, 0.2);
+float fill = kit_sd_fill(d);
+float ink = kit_sd_outline(d, 0.75);
+```
+
+Call both helpers before fragment-dependent branches. They use screen derivatives to
+estimate how much of a square pixel the locally straight edge covers. Very tight
+curves and cusps can differ from supersampling. For a reference rendered at a higher
+resolution and then downsampled, multiply the outline width by the render scale.
+The `sdf-coverage` shot in `tests/film` shows the same moving 0.75 px ring and
+outlined disc with point sampling (left), derivative coverage (middle), and 16×16
+supersampling within each output pixel (right).
+
 ### Raymarching
 
 GLSL can't pass a function as a parameter, so `core/raymarch.glsl` calls one that your

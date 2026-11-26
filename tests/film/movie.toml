@@ -94,3 +94,8 @@ id = "blue-noise"
 scene = "scenes/blue-noise.glsl"
 duration = 2
 channels = [{ file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]
+
+[[shot]]
+id = "sdf-coverage"
+scene = "scenes/sdf-coverage.glsl"
+duration = 2
