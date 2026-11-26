@@ -27,7 +27,7 @@ several films that share libraries):
 shotglass = "0.1"
 
 [libraries]
-kit = { version = "0.2", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
+kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 quality = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "quality" }

@@ -62,9 +62,19 @@ float kit_value_noise(vec3 p) {
                mix(mix(n001, n101, u.x), mix(n011, n111, u.x), u.y), u.z);
 }
 
-// A gradient of length sqrt(2) at an angle from the top 24 bits of h, so every
-// direction is equally likely (no axis-aligned streaks, unlike a few fixed directions).
+// One of 8 gradient directions (4 diagonal, 4 axis), all of length sqrt(2), chosen
+// by bits of h.
 vec2 kit_private_gradient(uint h) {
+    vec2 g = vec2((h & 1U) == 0U ? 1.0 : -1.0, (h & 2U) == 0U ? 1.0 : -1.0);
+    if ((h & 4U) != 0U) {
+        g = (h & 8U) == 0U ? vec2(g.x * 1.41421356, 0.0) : vec2(0.0, g.y * 1.41421356);
+    }
+    return g;
+}
+
+// A gradient of length sqrt(2) at an angle from the top 24 bits of h: every direction
+// equally likely.
+vec2 kit_private_gradient_angle(uint h) {
     float a = 6.28318531 * kit_private_unit(h);
     return 1.41421356 * vec2(cos(a), sin(a));
 }
@@ -72,7 +82,7 @@ vec2 kit_private_gradient(uint h) {
 // kit_gradient_noise(p): smooth noise without value noise's blocky look (Perlin-style).
 //   p   any position, cells 1 unit wide
 //   ->  about -1..1, 0 at every whole-number point
-//   cost: 4 hashes, 4 sin/cos pairs + quintic fade
+//   cost: 4 hashes + quintic fade
 //   e.g. float n = 0.5 + 0.5 * kit_gradient_noise(uv * 6.0);
 float kit_gradient_noise(vec2 p) {
     vec2 i = floor(p), f = fract(p);
@@ -105,9 +115,9 @@ float kit_simplex_noise(vec2 p) {
     vec3 w = max(0.5 - vec3(dot(d0, d0), dot(d1, d1), dot(d2, d2)), 0.0);
     w *= w;
     w *= w;
-    vec3 ramp = vec3(dot(kit_private_gradient(kit_hash_u(c)), d0),
-                     dot(kit_private_gradient(kit_hash_u(c + uvec2(step1))), d1),
-                     dot(kit_private_gradient(kit_hash_u(c + uvec2(1U))), d2));
+    vec3 ramp = vec3(dot(kit_private_gradient_angle(kit_hash_u(c)), d0),
+                     dot(kit_private_gradient_angle(kit_hash_u(c + uvec2(step1))), d1),
+                     dot(kit_private_gradient_angle(kit_hash_u(c + uvec2(1U))), d2));
     // 1 / max over the cell of sum(w * sqrt(2) * |d|): every output lies in -1..1
     return 70.148 * dot(w, ramp);
 }
@@ -153,7 +163,7 @@ int kit_private_noise_wrap(int cell, int period) {
 //   angle     gradient rotation in radians, typically 0..2*pi
 //   gradient  output partial derivatives with respect to p.x and p.y
 //   ->        signed noise, approximately -1..1
-//   cost: 3 hashes, 3 simplex corner contributions, 4 sin/cos pairs
+//   cost: 3 hashes, 3 simplex corner contributions, 1 sin and 1 cos
 //   e.g. vec2 g; float n = kit_simplex_flow(uv * 8.0, ivec2(8), iTime, g);
 // Adapted from psrdnoise2.glsl by Stefan Gustavson and Ian McEwan (MIT).
 // https://github.com/stegu/psrdnoise/blob/main/src/psrdnoise2.glsl
