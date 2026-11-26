@@ -1,5 +1,5 @@
 // Dusk over rolling hills: the sun sets, clouds drift, stars come out.
-// Uses core/: ease, noise (hash, value, gradient, fbm), color (palette, sRGB, ACES,
+// Uses core/: ease, noise (hash, value, gradient, simplex, fbm), color (palette, sRGB, ACES,
 // vignette, grain) and sdf (the sun).
 #include <kit/ease.glsl>
 #include <kit/noise.glsl>
@@ -38,6 +38,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // Clouds: stretched fbm, gently churning, lit pink then purple.
     float c = kit_fbm(p * vec2(1.4, 4.5) + vec2(iTime * 0.04, 0.0), 5);
     c *= 0.9 + 0.2 * kit_value_noise(vec3(p * 5.0, iTime * 0.2));
+    c += 0.03 * kit_simplex_noise(p * 9.0 + vec2(iTime * 0.3, 0.0));  // wispy edges
     float cloud = smoothstep(0.46, 0.66, c) * smoothstep(0.38, 0.60, uv.y);
     col = mix(col, mix(srgb(1.0, 0.75, 0.65), srgb(0.50, 0.32, 0.50), dusk), cloud * 0.8);
 

@@ -85,6 +85,33 @@ float kit_gradient_noise(vec2 p) {
     return mix(mix(a, b, u.x), mix(d, e, u.x), u.y);
 }
 
+// kit_simplex_noise(p): smooth noise on a triangular lattice. Looks the same in every
+// direction (gradient noise's square grid shows in its spectrum; this doesn't), with
+// more contrast and slightly finer features than kit_gradient_noise at the same scale.
+//   p   position in lattice units, abs(p) < 2^22 per axis
+//   ->  -1..1 (the bound is exact, reached only when all three gradients line up), 0 at
+//       every lattice point
+//   cost: 3 hashes, 3 sin/cos pairs
+//   e.g. float n = 0.5 + 0.5 * kit_simplex_noise(uv * 6.0);
+float kit_simplex_noise(vec2 p) {
+    const float F2 = 0.36602540;   // (sqrt(3) - 1) / 2: skews p onto the lattice
+    const float G2 = 0.21132487;   // (3 - sqrt(3)) / 6: unskews it back
+    vec2 base = floor(p + (p.x + p.y) * F2);
+    vec2 d0 = p - base + (base.x + base.y) * G2;
+    vec2 step1 = d0.x >= d0.y ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+    vec2 d1 = d0 - step1 + G2;
+    vec2 d2 = d0 - 1.0 + 2.0 * G2;
+    uvec2 c = uvec2(ivec2(base));
+    vec3 w = max(0.5 - vec3(dot(d0, d0), dot(d1, d1), dot(d2, d2)), 0.0);
+    w *= w;
+    w *= w;
+    vec3 ramp = vec3(dot(kit_private_gradient(kit_hash_u(c)), d0),
+                     dot(kit_private_gradient(kit_hash_u(c + uvec2(step1))), d1),
+                     dot(kit_private_gradient(kit_hash_u(c + uvec2(1U))), d2));
+    // 1 / max over the cell of sum(w * sqrt(2) * |d|): every output lies in -1..1
+    return 70.148 * dot(w, ramp);
+}
+
 // kit_cellular_noise(p): distances to the two nearest feature points (F1, F2).
 //   p   position in unit cells, abs(p) < 2^22 per axis
 //   ->  Euclidean distances in cell units, nearest first
