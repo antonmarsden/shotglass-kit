@@ -182,6 +182,17 @@ void test_gradient_noise(vec2 c) {
     expect(abs(kit_gradient_noise(p + vec2(h, 0.0)) - n) <= 4.0 * h, n);
 }
 
+void test_simplex_noise(vec2 c) {
+    vec2 p = c * 40.0 - 20.0;
+    float n = kit_simplex_noise(p);
+    expect(abs(n) <= 1.0 + 1e-5, n);                // the header's exact bound
+    expect_near(kit_simplex_noise(vec2(0.0)), 0.0, 1e-6); // 0 at lattice points
+    // smooth: a tiny step gives a tiny change (slope measured on the CPU peaks near 7.1)
+    float h = 1e-3;
+    expect(abs(kit_simplex_noise(p + vec2(h, 0.0)) - n) <= 8.0 * h, n);
+    expect(abs(kit_simplex_noise(p + vec2(0.0, h)) - n) <= 8.0 * h, n);
+}
+
 void test_fbm(vec2 c) {
     vec2 p = c * 20.0 - 10.0;
     for (int o = 1; o <= 12; o += 3) {
