@@ -1,8 +1,11 @@
 name: CI
 
 on:
+  # Branch work is tested by its PR; pushes only run CI once they land on main.
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
   # canary.yml calls this with shotglass_ref: main to test against unpinned shotglass.
   workflow_call:
     inputs:
@@ -10,6 +13,14 @@ on:
         description: "shotglass branch to build instead of SHOTGLASS_REV"
         type: string
         default: ""
+
+permissions:
+  contents: read
+
+# A new push to a PR cancels its older run; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
