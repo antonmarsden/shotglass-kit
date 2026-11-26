@@ -513,8 +513,10 @@ In short (the full rules, with units, precision, sound and versioning, are in
   add next to the kit won't clash with it.
 - **Portable:** everything compiles as GLSL 3.30 core and GLSL ES 3.00 (WebGL 2),
   checked by a reference compiler (glslang) in CI, not just by one GPU's driver.
-- **Deterministic:** the same inputs give the same pixels. Hashes and noise use integer
-  arithmetic, so they match on every GPU (`sin()`-based hashes don't).
+- **Deterministic:** the same inputs give the same pixels on the same CPU and GPU, as in
+  shotglass itself. Other GPUs and drivers can differ slightly (built-ins like `sin()`
+  round differently), so the kit keeps those differences small rather than chasing
+  bit-identical output everywhere.
 - **No global state:** include any file in any order; each file is included once.
 
 ## Working on the kit

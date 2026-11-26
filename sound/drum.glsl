@@ -6,8 +6,8 @@
 // and ends in true silence at a time the header gives, so hits never click.
 //
 // The noise in the snare and hat is a function of `t` alone: integer-hashed values
-// 24000 times a second, joined by straight lines, so it is the same on every GPU, at
-// every sample rate, and varies smoothly with `t` (a tiny timing difference between
+// 24000 times a second, joined by straight lines, so it is the same at
+// every sample rate and varies smoothly with `t` (a tiny timing difference between
 // drivers gives a tiny difference in level). Every hit of a drum has the same noise,
 // like a sample.
 // sound: yes

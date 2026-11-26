@@ -7,7 +7,7 @@
 //   e.g.      transition = { type = "fx/dissolve.glsl", duration = 1.0, params = { scale = 6.0 } }
 //
 // The hash is the engine's original sin() hash, kept so this renders exactly like the
-// built-in "dissolve". It can differ slightly between GPUs; core/noise.glsl doesn't.
+// built-in "dissolve".
 #ifndef scale
 #define scale 9.0
 #endif
