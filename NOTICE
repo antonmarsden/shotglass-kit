@@ -16,3 +16,7 @@ core/textures/blue-noise-64.png is Christoph Peters' 64_64/LDR_LLL1_0.png,
 licensed CC0 1.0 Universal.
 https://momentsingraphics.de/BlueNoise.html
 https://github.com/Calinou/free-blue-noise-textures/blob/master/64_64/LDR_LLL1_0.png
+
+kit_aces in core/color.glsl uses Krzysztof Narkowicz's fitted ACES filmic curve
+("ACES Filmic Tone Mapping Curve", 2016).
+https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
