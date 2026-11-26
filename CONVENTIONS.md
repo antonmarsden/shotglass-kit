@@ -276,3 +276,4 @@ Existing code that doesn't follow these rules, and why.
 |---|---|---|
 | `transitions/dissolve.glsl` | §3 no `sin()` hashes | Renders exactly like the engine's deprecated built-in `dissolve`, so films can move to the kit without their pixels changing. A deterministic dissolve can come as a new transition. |
 | `transitions/wipe.glsl` | §2 screen lengths in frame heights | `softness` is in uv units (0..1 on each axis), as in the engine's built-in `wipe`, for the same reason. |
+| `fx/dither-ops.glsl` | §6 fx maths in `fx/ops.glsl` | Shares core rounding through its canonical include while keeping the other passes independent of the core library. |

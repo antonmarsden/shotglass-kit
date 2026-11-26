@@ -253,7 +253,7 @@ jobs:
 
       # Golden picture of tests/layers (fx/ and blend/): the 11 blend modes over the same
       # picture and swatch (one second each), then grade, grain, vignette, letterbox,
-      # place, bloom with screen and add, and chroma key. Same tolerance and update
+      # place, both bloom variants, chroma key, and plain and dithered ramps. Same tolerance and update
       # steps as above. Moving SHOTGLASS_REV can change it: the engine does the compositing.
       - name: Layers film matches its golden picture
         run: |
@@ -261,7 +261,15 @@ jobs:
           xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 4 --out golden-out/layers.png \
             --at "$LAYERS_FRAMES" --compare tests/golden/layers.png
         env:
-          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5,key-backdrop+0.5
+          LAYERS_FRAMES: base+0.5,base+1.5,base+2.5,base+3.5,base+4.5,base+5.5,base+6.5,base+7.5,base+8.5,base+9.5,base+10.5,base+11.5,base+12.5,base+13.5,base+14.5,base+15.5,base+16.5,base+17.5,key-backdrop+0.5,plain-ramp+0.5,dither-ramp+0.5
+
+      - name: Dither pattern is pixel-identical across frames of a static shot
+        run: |
+          xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 1 \
+            --at dither-ramp+0.125 --out golden-out/dither-reference.png
+          xvfb-run -a shotglass strip tests/layers --size 320x180 --cols 1 \
+            --at dither-ramp+0.875 --out golden-out/dither-static.png \
+            --compare golden-out/dither-reference.png --tolerance 0 --budget 0 --max-mean 0
 
       # Every kit transition, with and without parameters, starts exactly on the old shot
       # and ends exactly on the new one (zero tolerance). The engine's own selftest checks

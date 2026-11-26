@@ -4,7 +4,7 @@
 # tests/golden/layers.png.
 # Order: multiply, screen, overlay, hardlight, add, darken, lighten, difference,
 # colordodge, colorburn, softlight (0-11 s); grade, grain, vignette, letterbox, place,
-# bloom with screen, bloom with add (11-18 s); chroma key (18-19 s).
+# bloom with screen, bloom with add (11-18 s); chroma key (18-19 s). Plain and dithered ramps follow (19-21 s).
 title = "shotglass-kit layer tests"
 aspect = [16, 9]
 
@@ -223,3 +223,24 @@ channels = ["chroma_plate"]
 from = "key-backdrop"
 to = "key-backdrop"
 uniforms.uDespill = 1.0
+
+[[shot]]
+id = "plain-ramp"
+scene = "scenes/dither.glsl"
+duration = 1
+uniforms.uRound = 1.0
+
+[[shot]]
+id = "dither-ramp"
+scene = "scenes/dither.glsl"
+duration = 1
+uniforms.uRound = 0.0
+
+[[layer]]
+id = "dither"
+type = "fx/dither"
+scale = 1
+channels = ["@input", { file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]
+from = "dither-ramp"
+to = "dither-ramp"
+params = { ditherLevels = 16 }

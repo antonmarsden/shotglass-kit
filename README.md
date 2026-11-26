@@ -11,7 +11,7 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise, colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
+| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
 | [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
 | [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
 | [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6 at commit `efaac0f` or later, for `notMeasured()`) |
@@ -169,6 +169,26 @@ Sample `uKeyColor` from the screen in display RGB (default pure green). Raise
 `uThreshold` to clear more of the screen. `uSoftness` sets the extra chroma distance
 to full coverage, with zero giving a hard edge. `uDespill` controls removal of
 key-coloured spill from 0 to 1 and leaves coverage unchanged.
+
+**Dither** needs the core library, named `kit` in this example. Add the pass
+after colour grading and glow, at full layer resolution.
+
+```toml
+[[layer]]
+id = "dither"
+type = "fx/dither"
+scale = 1
+channels = ["@input", { file = "<kit/textures/blue-noise-64.png>", filter = "nearest", srgb = false }]
+params = { ditherLevels = 64 }   # output levels per RGB channel, 2..256 (default 64)
+```
+
+The pass spreads the quantization steps of gradients and glows into a fixed
+pixel-space pattern. A static picture at the same size keeps the same pattern
+across frames. Smaller level counts make the texture easier to see. Since
+Shotglass supplies an 8-bit `@input`, 256 levels leave that input unchanged and
+the pass cannot recover detail lost in earlier rounding. The encoder may change
+how much of the pattern survives. Compare plain and dithered 16-level rounding
+in [the layer test film](tests/layers/movie.toml).
 
 **Blend modes** (`blend/<name>`): `multiply`, `screen`, `overlay`, `hardlight`, `add`
 (linear dodge), `darken`, `lighten`, `difference`, `colordodge`, `colorburn`,
