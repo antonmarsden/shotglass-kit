@@ -62,20 +62,17 @@ float kit_value_noise(vec3 p) {
                mix(mix(n001, n101, u.x), mix(n011, n111, u.x), u.y), u.z);
 }
 
-// One of 8 gradient directions (4 diagonal, 4 axis), all of length sqrt(2), chosen
-// by bits of h.
+// A gradient of length sqrt(2) at an angle from the top 24 bits of h, so every
+// direction is equally likely (no axis-aligned streaks, unlike a few fixed directions).
 vec2 kit_private_gradient(uint h) {
-    vec2 g = vec2((h & 1U) == 0U ? 1.0 : -1.0, (h & 2U) == 0U ? 1.0 : -1.0);
-    if ((h & 4U) != 0U) {
-        g = (h & 8U) == 0U ? vec2(g.x * 1.41421356, 0.0) : vec2(0.0, g.y * 1.41421356);
-    }
-    return g;
+    float a = 6.28318531 * kit_private_unit(h);
+    return 1.41421356 * vec2(cos(a), sin(a));
 }
 
 // kit_gradient_noise(p): smooth noise without value noise's blocky look (Perlin-style).
 //   p   any position, cells 1 unit wide
 //   ->  about -1..1, 0 at every whole-number point
-//   cost: 4 hashes + quintic fade
+//   cost: 4 hashes, 4 sin/cos pairs + quintic fade
 //   e.g. float n = 0.5 + 0.5 * kit_gradient_noise(uv * 6.0);
 float kit_gradient_noise(vec2 p) {
     vec2 i = floor(p), f = fract(p);
@@ -129,7 +126,7 @@ int kit_private_noise_wrap(int cell, int period) {
 //   angle     gradient rotation in radians, typically 0..2*pi
 //   gradient  output partial derivatives with respect to p.x and p.y
 //   ->        signed noise, approximately -1..1
-//   cost: 3 hashes, 3 simplex corner contributions, 1 sin and 1 cos
+//   cost: 3 hashes, 3 simplex corner contributions, 4 sin/cos pairs
 //   e.g. vec2 g; float n = kit_simplex_flow(uv * 8.0, ivec2(8), iTime, g);
 // Adapted from psrdnoise2.glsl by Stefan Gustavson and Ian McEwan (MIT).
 // https://github.com/stegu/psrdnoise/blob/main/src/psrdnoise2.glsl
