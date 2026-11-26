@@ -1,7 +1,9 @@
 // shotglass-kit/core: noise.glsl
 //
-// Hashes and noise built on integer arithmetic, so they give the same bits on every
-// GPU and in browsers (sin()-based hashes don't). Same input, same output, always.
+// Hashes and noise built on integer arithmetic: well mixed for any input, cheap, and
+// usable in sound shaders. The hashes themselves give the same bits on every GPU; the
+// noise built on them uses float maths, so like the rest of the kit it is exact on
+// one CPU/GPU and close elsewhere.
 // sound: yes
 
 // kit_hash_u(x): mixes the bits of x (lowbias32). Full 32-bit output.
@@ -61,7 +63,7 @@ float kit_value_noise(vec3 p) {
 }
 
 // One of 8 gradient directions (4 diagonal, 4 axis), all of length sqrt(2), chosen
-// by bits of h: no trigonometry, so it's exact everywhere.
+// by bits of h.
 vec2 kit_private_gradient(uint h) {
     vec2 g = vec2((h & 1U) == 0U ? 1.0 : -1.0, (h & 2U) == 0U ? 1.0 : -1.0);
     if ((h & 4U) != 0U) {

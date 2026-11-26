@@ -26,8 +26,9 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `shotglass check tests/film --web --strict --no-gpu` checks both dialects with glslang.
   The strict web check fails on browser compatibility warnings. CI also compiles
   the simplex-flow scene with Chromium's WebGL 2 compiler.
-- **Deterministic:** no `sin()` hashes or other GPU-dependent tricks in new code. Use
-  `kit_hash` from `core/noise.glsl`.
+- **Deterministic:** the same inputs give the same output on the same CPU and GPU; no
+  state, time or driver features beyond what CONVENTIONS.md §3 allows. Built-ins like
+  `sin()` are fine; for randomness use `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
 - **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`; `tests/layers` for `fx/` and `blend/`; `tests/unit/quality/*.test.toml` for `quality/`, see "Adding a quality metric"): CI

@@ -76,16 +76,21 @@ Never divide by a parameter that can be zero without a guard
 ## 3. Determinism
 
 A frame depends only on (film, time, size, render scale), and a sample only on (film,
-sample index). The kit must not add other inputs, and must keep results as close
-across GPUs as GLSL allows.
+sample index). The kit must not add other inputs. Like shotglass, the kit promises the
+same pixels and samples on the same CPU and GPU (and driver); across GPUs results may
+differ slightly, and should stay visually the same.
 
-- **Integer hashes are exact.** Randomness comes from `kit_hash` / `kit_hash_u`
-  (`core/noise.glsl`): 32-bit unsigned integer arithmetic, which wraps the same way at
-  GLSL 3.30 and GLSL ES 3.00 (`highp`). They give the same bits everywhere.
-- **No `sin()` hashes** (`fract(sin(x) * 43758.5453)`) or anything else that
-  multiplies a float rounding error into a visible difference. Built-in functions like
-  `sin`, `pow` and `exp` differ by a few ULPs between drivers; code must stay smooth
-  in those errors, so a tiny input difference gives a tiny output difference.
+- **Use built-ins freely.** `sin`, `cos`, `pow`, `exp` and friends are fine wherever
+  they're the natural maths (rotations, oscillators, gradient angles). They differ by a
+  few ULPs between drivers, which is within the promise above.
+- **Prefer the kit's hashes.** Randomness comes from `kit_hash` / `kit_hash_u`
+  (`core/noise.glsl`): 32-bit integer arithmetic, chosen for quality and speed (a
+  `fract(sin(x) * 43758.5453)` hash loses its randomness for large `x` and shows
+  patterns), not as a cross-GPU guarantee. A `sin()` hash isn't forbidden, but say why
+  in a comment.
+- **Avoid amplifying rounding error.** Code that turns a float rounding difference into
+  a visible one (a threshold on a chaotic value, a hash of a computed float) makes
+  GPUs disagree more than they need to; keep results smooth in their inputs.
 - **No implementation-defined built-ins** where the choice shows: `round()` may go
   either way at .5 (use `floor(x + 0.5)`); converting a float outside the `int` range
   to `int` is undefined (document the input range, or clamp first).
@@ -274,6 +279,5 @@ Existing code that doesn't follow these rules, and why.
 
 | where | rule | why it stays |
 |---|---|---|
-| `transitions/dissolve.glsl` | §3 no `sin()` hashes | Renders exactly like the engine's deprecated built-in `dissolve`, so films can move to the kit without their pixels changing. A deterministic dissolve can come as a new transition. |
 | `transitions/wipe.glsl` | §2 screen lengths in frame heights | `softness` is in uv units (0..1 on each axis), as in the engine's built-in `wipe`, for the same reason. |
 | `fx/dither-ops.glsl` | §6 fx maths in `fx/ops.glsl` | Shares core rounding through its canonical include while keeping the other passes independent of the core library. |
