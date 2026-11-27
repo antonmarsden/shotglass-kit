@@ -3,7 +3,7 @@
 // First pass of the bloom recipe: keeps what is brighter than a threshold in the picture
 // below, and black elsewhere. Run it as a hidden helper layer (`opacity = 0`, usually at
 // `scale = 0.5`) and read it from the blur layers with "@<id>". See blur.glsl for the
-// whole recipe. Needs shotglass 0.1.5 for the "@<id>" read.
+// whole recipe.
 //   channels  ["@input"]                 iChannel0 is the picture below
 //   uniforms (animatable):
 //     uThreshold  float, 0..1            luma where the glow starts (default 0.6)

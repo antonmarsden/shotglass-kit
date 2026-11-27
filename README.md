@@ -11,10 +11,10 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise (value, gradient, simplex, cellular), colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
-| [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
-| [`text/`](text) | `shotglass-kit/text` | drawing [text blocks](https://github.com/antonmarsden/shotglass#text): placing a block by its centre, a corner or its baseline, sized by em in frame heights; ink that stays crisp at any scale, outlines, glows, drop shadows (needs shotglass 0.1.3) |
-| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6 at commit `efaac0f` or later, for `notMeasured()`) |
+| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` |
+| [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` |
+| [`text/`](text) | `shotglass-kit/text` | [Text blocks, glyph runs, kinetic type, subtitles and computed numbers](#glyph-runs) |
+| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
@@ -24,14 +24,14 @@ several films that share libraries):
 
 ```toml
 # shotglass.toml
-shotglass = "0.1"
+shotglass = "0.1.8"
 
 [libraries]
 kit = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "core" }
 transitions = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "transitions" }
 sound = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "sound" }
 quality = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "quality" }
-text = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
+text = { version = "0.2", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
 fx = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "fx" }
 blend = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "blend" }
 ```
@@ -146,8 +146,8 @@ work with any `blend`; `fx/grade` and `fx/grain` read `@input` and write an opaq
 picture, so a layer's `opacity` is their strength. A pass assumes straight alpha from its
 channel, which is what `[textures]` images and `@picture` give.
 
-**Chroma key** uses a plate on `iChannel0`. Bind a `[textures]` image or, with
-shotglass 0.1.6, an image sequence. Leave the texture's `srgb` option at its default
+**Chroma key** uses a plate on `iChannel0`. Bind a `[textures]` image or an image
+sequence. Leave the texture's `srgb` option at its default
 (`false`) to sample display RGB. The pass fits the plate to the frame and multiplies
 its straight alpha by the matte. The shot underneath supplies the background.
 
@@ -209,7 +209,7 @@ vec4 blend(vec2 uv) {
 }
 ```
 
-**Bloom** (needs shotglass 0.1.5) is three layers: a bright pass drawn at `opacity = 0`
+**Bloom** is three layers: a bright pass drawn at `opacity = 0`
 (a hidden helper), a blur across that reads it with `@bright`, and a blur down that
 reads that and is screened (or added, for a hotter glow) over the picture. Run them at
 `scale = 0.5`: a quarter of the cost, and the blur is soft anyway.
@@ -255,7 +255,6 @@ and `to`, because `@<id>` is black while that layer isn't active.
 
 shotglass sets the words of a `[texts]` block into a texture (coverage, and a signed
 distance field for crisp edges) and binds it to an `iChannel`; `text/block.glsl` draws it.
-Needs `shotglass = "0.1.3"` in `shotglass.toml`.
 
 The kit ships no fonts: any Google Fonts family is a library of its own (see shotglass's
 README, "Getting fonts"). `shotglass fonts add` declares it, fetches it and pins it:
@@ -314,6 +313,61 @@ shadow offsets and softness are ems too, up to `kit_text_reach(meta)` (the block
 `kit_text_box` also gives `local` (0..1 across the text) and `p` (ems from the first
 baseline) for gradients, wipes and per-line effects. The helpers assume the block's
 default `vflip = true` and handle the flip themselves.
+
+### Glyph runs
+
+`text/kinetic.glsl` uses easing functions from the core peer library.
+
+Use `glyphs = true` in a `[texts]` entry and bind both its atlas and table.
+The atlas supplies the MTSDF, and the table carries the engine's layout, including
+logical grapheme and word indices and visual line order.
+[Engine format and channel bindings](https://github.com/antonmarsden/shotglass/blob/main/docs/channels.md#glyph-runs-glyph-sets-and-subtitles).
+
+```toml
+[texts]
+credits = { file = "credits.txt", font = "body", size = 48, align = "center", glyphs = true }
+captions = { subtitles = "captions.srt", font = "body", size = 40, width = 900, align = "center", glyphs = true }
+digits = { glyphs = "0123456789-.:", font = "body", size = 40, set = true }
+
+[[layer]]
+id = "subtitles"
+scene = "fx/subtitles.glsl"
+channels = ["captions", { text = "captions", part = "glyphs" }]
+```
+
+- **Runs**. Open the table with `kit_text_read_table` and pass it to `kit_text_run`
+  with a half-open range of visual lines. Use layout texels from the top left of the
+  block, with y down. Convert a screen pixel to layout texels with
+  `pixel = h.em / (em_in_frame_heights * iResolution.y)` and reverse y. Pass
+  `iChannelMeta[atlas_channel].y` as the distance spread. Style lengths and offsets
+  are in layout texels. The RGB median gives crisp fill and outline, and the atlas
+  alpha gives the true distance for the soft shadow. Keep the outline and blur within
+  the atlas spread at the chosen scale.
+- **Kinetic type**. Use `kit_text_run_lines` and `kit_text_run_glyphs` to enumerate
+  candidates, then call `kit_text_glyph_ink` with your transform for each glyph.
+  `kit_text_stagger` eases by grapheme, word or line, `kit_text_typewriter` gates
+  a prefix of logical graphemes, and `kit_text_reveal` interpolates an offset,
+  scale, clockwise angle and opacity toward rest. The search reach must cover the
+  maximum horizontal distance from the original pen and vertical distance from the
+  original baseline to any transformed glyph or its shadow. Larger reach means more
+  candidate records per pixel.
+- **Subtitles**. Copy the [layer scene](tests/typography/fx/subtitles.glsl) to
+  `fx/subtitles.glsl` in your film. It imports `text/subtitles.glsl`, uses
+  `iMovieTime` for cue selection, and aligns the cue's last baseline near the bottom.
+  Cues are active from their start through the millisecond before their end.
+  The helper returns straight display RGBA for the layer compositor.
+- **Numbers**. Bind the glyph set's atlas and table as a channel pair. Use
+  `kit_text_number` with decimal places zero for integers or pass integral units
+  for fixed point (for example, `-125` with two places draws `-1.25`).
+  `kit_text_timecode` draws elapsed milliseconds as `HH:MM:SS.mmm`.
+  Both start at the left pen on the baseline and use the set's advances.
+  Include each digit and punctuation mark the format needs in the glyph set.
+
+Runs, transformed glyphs and numbers return premultiplied display RGBA. Composite
+over an opaque background with `ink.rgb + (1.0 - ink.a) * background`.
+
+[Play the typography example](tests/typography) for a staggered title, rolling
+credits, captions on a film-wide layer and a live counter.
 
 ### Sound
 
@@ -542,7 +596,8 @@ shotglass play tests/film                   # watch it, with live reload
 shotglass play tests/sound                  # listen to the sound library
 shotglass play tests/instruments            # and to its instruments
 shotglass play tests/mix                    # and its mix effects
-shotglass play tests/text                   # the text library
+shotglass play tests/text                   # text blocks
+shotglass play tests/typography             # glyph runs, captions and numbers
 shotglass test tests/unit                   # unit and property tests and quality metric tests, on your GPU
 ```
 

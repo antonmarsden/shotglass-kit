@@ -12,8 +12,8 @@
 //   id = "bloom"   type = "fx/blur"    scale = 0.5  opacity = 0.8  channels = ["@across"]
 //   blend = "blend/screen"  params = { direction = [0.0, 1.0] }  uniforms.uRadius = 0.03
 //
-// (blend/add makes a stronger, hotter glow.) Needs shotglass 0.1.5 for "@<id>". At
-// `scale = 0.5` the three passes cost a quarter of a full-size blur each.
+// (blend/add makes a stronger, hotter glow.) At `scale = 0.5` the three passes
+// cost a quarter of a full-size blur each.
 //   channels  ["@<layer>"]               iChannel0 is the picture to blur
 //   uniforms (animatable):
 //     uRadius  float, frame heights      the blur's sigma (default 0.02)
