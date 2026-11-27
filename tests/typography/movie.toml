@@ -1,0 +1,29 @@
+title = "Glyph runs, captions and numbers"
+aspect = [16, 9]
+
+[fonts]
+display = "<bungee/Bungee-Regular.ttf>"
+body = "<inter/Inter[opsz,wght].ttf>"
+
+[texts]
+title = { text = "Moving Type", font = "display", size = 64, glyphs = true }
+credits = { text = "CREDITS\n\nAda Mouse\nDirector\n\nTess Fox\nTypography\n\nThe End", font = "body", size = 48, align = "center", glyphs = true }
+captions = { subtitles = "captions.srt", font = "body", size = 40, width = 900, align = "center", glyphs = true }
+digits = { glyphs = "0123456789-.:", set = true, font = "body", size = 40 }
+
+[[shot]]
+id = "title"
+scene = "scenes/title.glsl"
+duration = 3
+channels = ["title", { text = "title", part = "glyphs" }]
+
+[[shot]]
+id = "credits"
+scene = "scenes/credits.glsl"
+duration = 5
+channels = ["credits", { text = "credits", part = "glyphs" }, "digits", { text = "digits", part = "glyphs" }]
+
+[[layer]]
+id = "subtitles"
+scene = "fx/subtitles.glsl"
+channels = ["captions", { text = "captions", part = "glyphs" }]

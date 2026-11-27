@@ -25,7 +25,7 @@ concurrency:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "af2b5cee6c878e5a270e87936208731ebcbf961c"
+  SHOTGLASS_REV: "9d7dde36aced3a194d31f1d1186a2345d8e9cc2c"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -201,6 +201,7 @@ jobs:
           shotglass check tests/mix --web --strict --no-gpu
           shotglass check tests/transitions --web --strict --no-gpu
           shotglass check tests/text --web --strict --no-gpu
+          shotglass check tests/typography --web --strict --no-gpu
           shotglass check tests/layers --web --strict --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
@@ -220,6 +221,7 @@ jobs:
           xvfb-run -a shotglass check tests/instruments --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/mix --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/text --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/typography --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/layers --size 320x180 --frames 1
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden

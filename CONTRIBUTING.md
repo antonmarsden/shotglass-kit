@@ -31,7 +31,7 @@ public domain, CC0) is fine if you name its source and licence in the file.
   `sin()` are fine; for randomness use `kit_hash` from `core/noise.glsl`.
 - **No global state:** no global variables, no `#define`s that leak names (a
   transition's parameter `#define`s are the exception: they're its interface).
-- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` for `text/`; `tests/layers` for `fx/` and `blend/`; `tests/unit/quality/*.test.toml` for `quality/`, see "Adding a quality metric"): CI
+- **Use it in a test film** (`tests/film`, or `tests/animation` for `core/animate.glsl`; `tests/sound`, `tests/instruments` or `tests/mix` for the `sound/` library; `tests/text` or `tests/typography` for `text/`; `tests/layers` for `fx/` and `blend/`; `tests/unit/quality/*.test.toml` for `quality/`, see "Adding a quality metric"): CI
   fails if a library file isn't included or a public function isn't called. A sound-safe
   file (`// sound: yes`) is also included by a test film's `music.glsl`, so it's checked
   as a sound shader too; a mix-only file (`// sound: mix only`, it calls `music()` /

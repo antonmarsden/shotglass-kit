@@ -1,0 +1,14 @@
+use = "fixtures/assert-tables.glsl"
+
+[[case]]
+name = "run records across rows, glyph under a pixel, and half-open subtitle cues"
+frame = "fixtures/run.glsl"
+size = "1024x2"
+max = { max = 0.0 }
+
+[[case]]
+name = "sorted glyph set code points and advances"
+frame = "fixtures/set.glsl"
+size = "1024x1"
+max = { max = 0.0 }
+params = { SET_FIXTURE = 1 }
