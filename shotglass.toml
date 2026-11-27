@@ -3,10 +3,6 @@
 # it in a film"); this file never reaches them, because a library is only its own folder
 # (core/, sound/, transitions/, text/). The fonts tests/text uses are Google Fonts
 # families (the kit ships none), fetched at the commit shotglass.lock pins.
-# 0.1.3: text blocks ([fonts], [texts], iChannelMeta) for tests/text.
-# 0.1.5: layers, blend modes and "@<layer>" channels for tests/layers (fx/, blend/).
-# 0.1.6: `shotglass quality` (picture and sound metrics) for tests/quality (quality/).
-# 0.1.8: glyph runs, subtitle cues and glyph sets for tests/typography.
 shotglass = "0.1.8"
 
 [libraries]

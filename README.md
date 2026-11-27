@@ -11,10 +11,10 @@ Each folder is a separate library that a film picks (and pins) on its own:
 |---|---|---|
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise (value, gradient, simplex, cellular), colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
-| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` (needs shotglass 0.1.4; the bloom recipe 0.1.5) |
-| [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` (needs shotglass 0.1.5) |
-| [`text/`](text) | `shotglass-kit/text` | [Text blocks, glyph runs, kinetic type, subtitles and computed numbers](#glyph-runs) (text 0.2 needs Shotglass 0.1.8 or later) |
-| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) (needs shotglass 0.1.6 at commit `efaac0f` or later, for `notMeasured()`) |
+| [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` |
+| [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` |
+| [`text/`](text) | `shotglass-kit/text` | [Text blocks, glyph runs, kinetic type, subtitles and computed numbers](#glyph-runs) |
+| [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) |
 | [`sound/`](sound) | `shotglass-kit/sound` | for `mainSound`: ADSR and AR envelopes, MIDI note → hertz, scales and chords as note numbers, beat/bar steps from a tempo, exact at any length of film; instruments (plucked string, FM bell, electric piano, pad) and drums (kick, snare, hat); for `mainMix`: multi-tap delay, reverb, ducking (sidechain), a look-ahead limiter, stereo width, soft clip |
 
 ## Using it in a film
@@ -146,8 +146,8 @@ work with any `blend`; `fx/grade` and `fx/grain` read `@input` and write an opaq
 picture, so a layer's `opacity` is their strength. A pass assumes straight alpha from its
 channel, which is what `[textures]` images and `@picture` give.
 
-**Chroma key** uses a plate on `iChannel0`. Bind a `[textures]` image or, with
-shotglass 0.1.6, an image sequence. Leave the texture's `srgb` option at its default
+**Chroma key** uses a plate on `iChannel0`. Bind a `[textures]` image or an image
+sequence. Leave the texture's `srgb` option at its default
 (`false`) to sample display RGB. The pass fits the plate to the frame and multiplies
 its straight alpha by the matte. The shot underneath supplies the background.
 
@@ -209,7 +209,7 @@ vec4 blend(vec2 uv) {
 }
 ```
 
-**Bloom** (needs shotglass 0.1.5) is three layers: a bright pass drawn at `opacity = 0`
+**Bloom** is three layers: a bright pass drawn at `opacity = 0`
 (a hidden helper), a blur across that reads it with `@bright`, and a blur down that
 reads that and is screened (or added, for a hotter glow) over the picture. Run them at
 `scale = 0.5`: a quarter of the cost, and the blur is soft anyway.
@@ -255,7 +255,6 @@ and `to`, because `@<id>` is black while that layer isn't active.
 
 shotglass sets the words of a `[texts]` block into a texture (coverage, and a signed
 distance field for crisp edges) and binds it to an `iChannel`; `text/block.glsl` draws it.
-Needs `shotglass = "0.1.3"` in `shotglass.toml`.
 
 The kit ships no fonts: any Google Fonts family is a library of its own (see shotglass's
 README, "Getting fonts"). `shotglass fonts add` declares it, fetches it and pins it:
@@ -317,9 +316,7 @@ default `vflip = true` and handle the flip themselves.
 
 ### Glyph runs
 
-Text 0.2 requires Shotglass 0.1.8 or later and the core peer library for the
-eases in `text/kinetic.glsl`. For existing block-only projects on older engines, keep
-the text 0.1 pin.
+`text/kinetic.glsl` uses easing functions from the core peer library.
 
 Use `glyphs = true` in a `[texts]` entry and bind both its atlas and table.
 The atlas supplies the MTSDF, and the table carries the engine's layout, including

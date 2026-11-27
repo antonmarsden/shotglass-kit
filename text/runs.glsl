@@ -1,7 +1,7 @@
 // shotglass-kit/text: runs.glsl
 // sound: picture only
 // Format 1 glyph tables. Positions and distances are layout texels, x right and y
-// down. Atlas tiles and table rows start at the top, as uploaded by Shotglass 0.1.8.
+// down. Atlas tiles and table rows start at the top.
 // Search cost: logarithmic in line/glyph counts plus the number of nearby records.
 
 struct kit_text_table {

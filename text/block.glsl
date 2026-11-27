@@ -1,8 +1,7 @@
 // shotglass-kit/text: block.glsl
 //
-// Drawing a shotglass text block (a [texts] entry bound to an iChannel, shotglass
-// 0.1.3): where it lands in the frame, and its ink, outline, glow and shadow, crisp at
-// any size. The engine rasterises the words once into an RGBA8 texture (R and A:
+// Drawing a shotglass text block (a [texts] entry bound to an iChannel). These helpers place
+// the block in the frame and draw crisp ink, outlines, glows and shadows at any size. The engine rasterises the words once into an RGBA8 texture (R and A:
 // coverage; G: signed distance, 0.5 on the outline, +0.5 per padding texel inside) and
 // gives its metrics in iChannelMeta[n] = (em, first baseline from the top, line pitch,
 // padding), in texels. These functions take that texture, iChannelResolution[n] and
