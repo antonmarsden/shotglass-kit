@@ -237,8 +237,8 @@ jobs:
       - name: Buffer films render a strip
         run: |
           mkdir -p golden-out
-          xvfb-run -a shotglass strip tests/buffer --size 320x180 --cols 4 --out golden-out/buffer.png             --at light-painting+1,light-painting+3.5,ink+1.9,ink+3.9,ripples+1.5,ripples+3.5,tunnel+1.5,tunnel+3.5,vhs+1,vhs+2.5,crt+1.5,crt+3.5
-          xvfb-run -a shotglass strip tests/buffer-loop --size 320x180 --cols 4 --out golden-out/buffer-loop.png             --at 0,2,4,5.9667
+          xvfb-run -a shotglass strip tests/buffer --size 320x180 --cols 4 --out golden-out/buffer.png --at light-painting+1,light-painting+3.5,ink+1,ink+3.9,reaction+1.9,reaction+3.9,ripples+1.5,ripples+3.5,tunnel+1.5,tunnel+3.5,vhs+1,vhs+2.5,crt+1.5,crt+3.5
+          xvfb-run -a shotglass strip tests/buffer-loop --size 320x180 --cols 4 --out golden-out/buffer-loop.png --at 0,2,4,5.9667
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change

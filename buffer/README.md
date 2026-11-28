@@ -108,7 +108,12 @@ packed channels, weighed, is the Laplacian or gradient of the value
   slows down). Sparks are stateless ballistic paths from hashed birth times that fork
   and cool from white to red, each frame drawing the stretch it covered. The sparkler
   burns out and the shot holds the finished photograph.
-- **Ink bleeding into paper:** Gray-Scott, with **eight chained buffers for eight steps
+- **Ink bleeding into damp paper:** a small water-and-pigment flow model after Curtis
+  et al. 1997 ("Computer-Generated Watercolor"): water flows between texels through
+  a conductance set by fibre noise, so fronts feather along the fibres; pigment rides
+  upwind with the water and settles as it gets shallow, so drying edges go dark. Six
+  chained buffers give six steps per frame.
+- **Reaction-diffusion:** Gray-Scott, with **eight chained buffers for eight steps
   per frame** (`rd1` reads `rd8`'s previous state, `rd2..rd8` the one before them).
   The reset reseeds with another layout and preset. Note that `init` replaces `@prev`
   on the reset frame: the first buffer in a chain also reads `@prev` and steps it then.

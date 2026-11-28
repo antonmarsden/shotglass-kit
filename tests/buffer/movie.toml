@@ -5,8 +5,11 @@
 #
 #   light-painting  a long exposure of a sparkler (kit_buf_expose): ballistic sparks
 #                   that fork and cool, ending on the finished photograph
-#   ink             ink bleeding into wet paper: Gray-Scott, eight chained steps per
-#                   frame, reseeded with another preset at each reset
+#   ink             ink drops bleeding into damp paper: water wicking through the
+#                   fibres carries pigment and leaves a dark rim (six chained steps
+#                   per frame)
+#   reaction        reaction-diffusion patterns (coral, then mitosis): Gray-Scott, eight
+#                   chained steps per frame, reseeded with another preset at a reset
 #   ripples         raindrops on a pool: the wave equation from history (@prev and
 #                   frame = -2), 16-bit height packed into rgba8, refracting the tiles
 #   tunnel          camera pointed at its own monitor: zoom-rotate feedback of the
@@ -24,6 +27,11 @@ duration = 4
 
 [[shot]]
 id = "ink"
+scene = "scenes/paper.glsl"
+duration = 4
+
+[[shot]]
+id = "reaction"
 scene = "scenes/paper.glsl"
 duration = 4
 
@@ -64,7 +72,73 @@ from = "light-painting"
 to = "light-painting.end"
 channels = ["@input", "@light"]
 
-# --- ink: eight Gray-Scott steps per frame, chained ------------------------------
+# --- ink: six steps of water and pigment flow per frame, chained ------------------
+# ink1 steps ink6's previous state (and lays the damp paper, and drops the ink),
+# ink2..ink6 the one before them this frame.
+
+[[buffer]]
+id = "ink1"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = [{ source = "@ink6", frame = "prev" }]
+params.FIRST = 1
+
+[[buffer]]
+id = "ink2"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink1"]
+
+[[buffer]]
+id = "ink3"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink2"]
+
+[[buffer]]
+id = "ink4"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink3"]
+
+[[buffer]]
+id = "ink5"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink4"]
+
+[[buffer]]
+id = "ink6"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink5"]
+
+[[layer]]
+id = "ink-show"
+scene = "layers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+channels = ["@input", "@ink6"]
+
+# --- reaction: eight Gray-Scott steps per frame, chained -------------------------
 # rd1 steps rd8's previous state, rd2..rd8 step the one before them this frame.
 # A reset reseeds rd1 (its init pass, which replaces @prev on the reset frame) with
 # another layout and preset.
@@ -73,9 +147,9 @@ channels = ["@input", "@light"]
 id = "rd1"
 scene = "buffers/rd.glsl"
 init = "buffers/rd_seed.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = [{ source = "@rd8", frame = "prev" }, "@prev"]
@@ -84,9 +158,9 @@ params.FIRST = 1
 [[buffer]]
 id = "rd2"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd1"]
@@ -94,9 +168,9 @@ channels = ["@rd1"]
 [[buffer]]
 id = "rd3"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd2"]
@@ -104,9 +178,9 @@ channels = ["@rd2"]
 [[buffer]]
 id = "rd4"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd3"]
@@ -114,9 +188,9 @@ channels = ["@rd3"]
 [[buffer]]
 id = "rd5"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd4"]
@@ -124,9 +198,9 @@ channels = ["@rd4"]
 [[buffer]]
 id = "rd6"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd5"]
@@ -134,9 +208,9 @@ channels = ["@rd5"]
 [[buffer]]
 id = "rd7"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd6"]
@@ -144,18 +218,18 @@ channels = ["@rd6"]
 [[buffer]]
 id = "rd8"
 scene = "buffers/rd.glsl"
-from = "ink"
-to = "ink.end"
-reset = ["ink + 2"]
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
 size = [192, 108]
 format = "rgba32f"
 channels = ["@rd7"]
 
 [[layer]]
-id = "ink-show"
-scene = "layers/ink.glsl"
-from = "ink"
-to = "ink.end"
+id = "reaction-show"
+scene = "layers/reaction.glsl"
+from = "reaction"
+to = "reaction.end"
 channels = ["@input", "@rd8"]
 
 # --- ripples ---------------------------------------------------------------------
