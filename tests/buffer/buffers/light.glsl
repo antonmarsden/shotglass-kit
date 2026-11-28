@@ -1,7 +1,7 @@
 // Light painting: a sparkler traces a looping figure in front of the camera and the
 // exposure keeps it, fading with a half-life (kit_buf_trail). The stroke is drawn as
 // the segments the sparkler crossed during this frame, so it stays continuous at any
-// frame rate; sparks fly off the head. State: linear HDR light, alpha unused.
+// frame rate; sparks fly off the head. Then it burns out and the exposure fades. State: linear HDR light, alpha unused.
 #include <kit/noise.glsl>
 #include <kit/sdf.glsl>
 #include <buffer/math.glsl>
@@ -34,7 +34,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float core = exp2(-d * d / (px * px * 0.8));
     float halo = exp2(-d / (2.5 * px));
     vec3 hot = vec3(1.0, 0.55, 0.18);
-    vec3 elem = hot * (1.2 * core + 0.10 * halo) + vec3(1.0) * 0.6 * core;
+    // The sparkler burns out from 2.2 s to 2.8 s (span-local): the head dims and goes
+    // red, the sparks stop, and the half-life (uHalfLife, keyed shorter in movie.toml)
+    // lets the drawing fade away.
+    float burn = 1.0 - smoothstep(2.2, 2.8, iTime);
+    hot = mix(vec3(0.6, 0.08, 0.02), hot, burn);
+    vec3 elem = (hot * (1.2 * core + 0.10 * halo) + vec3(1.0) * 0.6 * core * burn) * burn;
     // Sparks: short streaks thrown from the head at random this frame.
     vec2 h = head(t1, aspect);
     for (int i = 0; i < 3; i++) {
@@ -43,7 +48,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         vec2 dir = vec2(cos(6.28318531 * r1), sin(6.28318531 * r1));
         vec2 s0 = h + dir * (0.01 + 0.06 * r2);
         float sd = kit_sd_segment(p, s0, s0 + dir * 0.01);
-        elem += vec3(1.0, 0.75, 0.35) * 0.5 * exp2(-sd * sd / (px * px * 0.6));
+        elem += burn * burn * vec3(1.0, 0.75, 0.35) * 0.5 * exp2(-sd * sd / (px * px * 0.6));
     }
     fragColor = kit_buf_trail(texelFetch(iChannel0, ivec2(fragCoord), 0), vec4(elem, 1.0), uHalfLife, iTimeDelta);
 }
