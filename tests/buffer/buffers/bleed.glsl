@@ -10,7 +10,8 @@
 // - Water evaporates; as a wet patch thins, its pigment settles, faster where the
 //   water is shallow. The edge of a patch dries first and the flow towards it carries
 //   pigment outwards, so the rim ends up darker: the "coffee ring" of real ink.
-// - Drops land at fixed frames (frames since the reset, so the fold is fixed).
+// - Drops land at fixed frames (frames since the reset, so the fold is fixed). Fresh
+//   water on a drying wash lifts its settled pigment and blooms (see below).
 //
 // Six chained buffers give six steps per film frame (ink1 steps ink6's previous state,
 // ink2..ink6 the one before them). ink1 (params.FIRST defined) also lays the damp
@@ -62,22 +63,30 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         next.y += flow * carried + 0.02 * wet * (n.y - c.y);
     }
     // Evaporation, and settling that speeds up as the water gets shallow.
-    next.x = max(next.x - 0.0002, 0.0);
-    float settle = 0.002 + 0.12 * (1.0 - smoothstep(0.03, 0.2, next.x));
+    next.x = max(next.x - 0.0006, 0.0);
+    float settle = 0.012 + 0.12 * (1.0 - smoothstep(0.03, 0.2, next.x));
     float dep = next.y * settle;
     next.y -= dep;
     next.z += dep;
+    // Re-wetting lifts settled pigment back into the water: when fresh water floods a
+    // drying wash, it picks the pigment up and carries it to its front, where it
+    // settles in a jagged dark edge round a paler centre: a bloom (backrun).
+    float lift = next.z * 0.08 * smoothstep(0.2, 0.6, next.x);
+    next.z -= lift;
+    next.y += lift;
 
 #ifdef FIRST
-    // Drops: three landing at 0, 0.5 and 1.2 s (frames 0, 15, 36 at 30 fps), each a
-    // disc of water carrying pigment.
-    vec3 drops[3] = vec3[3](vec3(0.40 * aspect, 0.56, 0.0), vec3(0.62 * aspect, 0.42, 15.0),
-                            vec3(0.50 * aspect, 0.66, 36.0));
-    for (int i = 0; i < 3; i++) {
+    // Drops: ink at 0, 0.5 and 1.2 s (frames 0, 15, 36 at 30 fps), each a disc of
+    // water carrying pigment, then at 2 s a smaller drop of clear water into the second
+    // wash while it is still damp, which blooms.
+    vec4 drops[4] = vec4[4](vec4(0.40 * aspect, 0.56, 0.0, 1.5), vec4(0.62 * aspect, 0.42, 15.0, 1.5),
+                            vec4(0.50 * aspect, 0.66, 36.0, 1.5), vec4(0.60 * aspect, 0.40, 60.0, 0.0));
+    for (int i = 0; i < 4; i++) {
         if (iFrame == int(drops[i].z)) {
-            float d = kit_buf_seed_disc(p, drops[i].xy, 0.06 + 0.015 * float(i), 0.01);
-            next.x += 3.0 * d;
-            next.y += 1.5 * d;
+            bool clear = drops[i].w == 0.0;   // smaller and less wet: it stops inside the wash
+            float d = kit_buf_seed_disc(p, drops[i].xy, clear ? 0.09 : 0.08 + 0.015 * float(i), 0.01);
+            next.x += (clear ? 0.8 : 1.0) * d;
+            next.y += drops[i].w * d;
         }
     }
 #endif
