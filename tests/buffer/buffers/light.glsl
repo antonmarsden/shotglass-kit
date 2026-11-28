@@ -19,7 +19,7 @@
 
 const float LOOKBACK = 12.0;             // frames of spark births drawn (longest life 0.4 s)
 const int PER_FRAME = 2;                 // sparks born per frame at full burn
-const vec2 GRAVITY = vec2(0.0, -1.4);    // frame heights / s²
+const vec2 GRAVITY = vec2(0.0, -0.9);    // frame heights / s²
 
 float burn(float t) { return 1.0 - smoothstep(2.6, 3.2, t); }
 
@@ -104,7 +104,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             float ang = 6.28318531 * kit_hash(id + ivec3(0, 0, 2));
             float speed = 0.5 + 0.9 * kit_hash(id + ivec3(0, 0, 3));
             vec2 v = speed * vec2(cos(ang), sin(ang));
-            float life = 0.12 + 0.28 * kit_hash(id + ivec3(0, 0, 4));
+            // Sparks thrown downwards burn out sooner, so falling streaks don't pile up
+            // under the figure (v.y = -speed lives about half as long as v.y = +speed).
+            float life = (0.12 + 0.24 * kit_hash(id + ivec3(0, 0, 4))) * (0.75 + 0.25 * v.y / speed);
             float split = life * (0.35 + 0.25 * kit_hash(id + ivec3(0, 0, 5)));
             float a0 = t0 - tb;
             float a1 = t1 - tb;
@@ -116,7 +118,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             for (int c = 0; c < 2; c++) {
                 float ca = 6.28318531 * kit_hash(id + ivec3(0, 0, 6 + c));
                 vec2 vc = 0.8 * vf + 0.45 * vec2(cos(ca), sin(ca));
-                float cl = 0.08 + 0.14 * kit_hash(id + ivec3(0, 0, 8 + c));
+                float cl = 0.06 + 0.10 * kit_hash(id + ivec3(0, 0, 8 + c));
                 light += flight(p, fork, vc, a0 - split, a1 - split, cl, 18.0, px);
             }
         }
