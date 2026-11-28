@@ -1,5 +1,6 @@
-// The long exposure over the street: the light buffer (iChannel1, linear HDR) plus a
-// soft bloom (kit_buf_blur, twice as wide), added to the plate and tonemapped. The
+// The long exposure over the street: the exposure buffer (iChannel1, linear light x
+// seconds) plus a soft lens bloom (kit_buf_blur, a ring of taps) added at display
+// time, over the plate, tonemapped so bright overlaps burn out to white. The
 // road catches a dim reflection of the stroke.
 #include <kit/color.glsl>
 #include <buffer/sample.glsl>

@@ -13,8 +13,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float block = 1.0 - smoothstep(0.30, 0.42, max(f.x, f.y));
     float e = on * block;
     vec4 elem = vec4(0.5 * e, 1.6 * e, 0.6 * e, 0.0);
-    vec4 decay = vec4(kit_buf_decay(0.05, iTimeDelta), kit_buf_decay(0.35, iTimeDelta),
-                      kit_buf_decay(0.08, iTimeDelta), 0.0);
+    // Green halves every 0.35 s (kit_buf_trail); red and blue are pre-scaled to their
+    // own, shorter half-lives.
+    float g = kit_buf_decay(0.35, iTimeDelta);
+    vec4 tint = vec4(kit_buf_decay(0.05, iTimeDelta) / g, 1.0, kit_buf_decay(0.08, iTimeDelta) / g, 0.0);
     vec4 prev = kit_buf_fetch(iChannel0, ivec2(fragCoord), false);
-    fragColor = max(elem, prev * decay);
+    fragColor = kit_buf_trail(prev * tint, elem, 0.35, iTimeDelta);
 }

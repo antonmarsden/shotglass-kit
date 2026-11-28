@@ -55,6 +55,22 @@ void test_trail_over_endpoints() {
     expect_eq(kit_buf_trail_over(prev, opaque, 1.0, 1.0), opaque);
 }
 
+void test_expose_is_frame_rate_independent(vec3 c) {
+    vec4 light = vec4(c * 4.0, 1.0);
+    vec4 at24 = vec4(0.0);
+    for (int i = 0; i < 24; i++) at24 = kit_buf_expose(at24, light, 1.0 / 24.0);
+    vec4 at60 = vec4(0.0);
+    for (int i = 0; i < 60; i++) at60 = kit_buf_expose(at60, light, 1.0 / 60.0);
+    expect_near(at24, light, 1e-5);
+    expect_near(at60, light, 1e-5);
+}
+
+void test_expose_adds_and_never_fades() {
+    expect_eq(kit_buf_expose(vec4(0.25), vec4(0.0), 0.04), vec4(0.25));
+    expect_eq(kit_buf_expose(vec4(0.25), vec4(1.0), 0.5), vec4(0.75));
+    expect_eq(kit_buf_expose(vec4(0.25), vec4(1.0), -1.0), vec4(0.25));
+}
+
 // --- Laplacians ------------------------------------------------------------------
 
 void test_laplacians_vanish_on_ramps(vec3 g) {

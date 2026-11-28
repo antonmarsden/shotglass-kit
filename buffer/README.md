@@ -58,6 +58,7 @@ and `strip` all show that same fold. The helpers keep it that way:
 |---|---|---|
 | `kit_buf_decay(halfLife, dt)` | math | per-step factor that halves every `halfLife` seconds |
 | `kit_buf_trail(prev, elem, halfLife, dt)` | math | brighter of the element and the decayed state (light painting) |
+| `kit_buf_expose(prev, light, dt)` | math | long exposure: adds the light of each step (light painting) |
 | `kit_buf_trail_over(prev, elem, halfLife, dt)` | math | premultiplied element over the decayed state (smoke, paint) |
 | `kit_buf_laplacian(c, e, w, n, s)` | math | 5-point Laplacian |
 | `kit_buf_laplacian(c, edges, corners)` | math | 9-point isotropic Laplacian |
@@ -101,8 +102,12 @@ packed channels, weighed, is the Laplacian or gradient of the value
 [`tests/buffer`](../tests/buffer) (one shot each) and
 [`tests/buffer-loop`](../tests/buffer-loop):
 
-- **Light painting / long exposure:** a sparkler's stroke, drawn as the segments it
-  crossed this frame, kept with `kit_buf_trail` and a 2 s half-life, plus a bloom.
+- **Light painting / long exposure:** the state is the exposure, and each frame adds
+  its light (`kit_buf_expose`), so crossings burn out to white and nothing fades. The
+  head's light is spread along the path it covered that frame (brighter where the hand
+  slows down). Sparks are stateless ballistic paths from hashed birth times that fork
+  and cool from white to red, each frame drawing the stretch it covered. The sparkler
+  burns out and the shot holds the finished photograph.
 - **Ink bleeding into paper:** Gray-Scott, with **eight chained buffers for eight steps
   per frame** (`rd1` reads `rd8`'s previous state, `rd2..rd8` the one before them).
   The reset reseeds with another layout and preset. Note that `init` replaces `@prev`

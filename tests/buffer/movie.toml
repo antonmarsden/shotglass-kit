@@ -3,8 +3,8 @@
 # here or in tests/buffer-loop. CI checks it strictly, renders it on Mesa and draws a
 # strip of it. Buffers live only for their shot (from/to), so each shot's fold is short.
 #
-#   light-painting  a sparkler drawn in the dark, long exposure (kit_buf_trail,
-#                   half-life), burning out and fading with a keyed half-life
+#   light-painting  a long exposure of a sparkler (kit_buf_expose): ballistic sparks
+#                   that fork and cool, ending on the finished photograph
 #   ink             ink bleeding into wet paper: Gray-Scott, eight chained steps per
 #                   frame, reseeded with another preset at each reset
 #   ripples         raindrops on a pool: the wave equation from history (@prev and
@@ -54,8 +54,8 @@ id = "light"
 scene = "buffers/light.glsl"
 from = "light-painting"
 to = "light-painting.end"
+format = "rgba16f"                 # the exposure adds up past 1
 channels = ["@prev"]
-uniforms.uHalfLife = { keys = [[0, 2.0], [2.4, 2.0], [3.0, 0.12]] }   # fades once it burns out
 
 [[layer]]
 id = "light-show"

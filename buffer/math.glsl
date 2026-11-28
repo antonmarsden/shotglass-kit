@@ -38,6 +38,17 @@ vec4 kit_buf_trail(vec4 prev, vec4 elem, float halfLife, float dt) {
     return max(elem, prev * kit_buf_decay(halfLife, dt));
 }
 
+// kit_buf_expose(prev, light, dt): a long exposure: adds the light that arrived
+// during this step, as a shutter left open does. Crossings and slow passages add up
+// and burn out to white once tonemapped; nothing fades. Frame-rate independent: a
+// constant light gives the same exposure after 1 s at any fps.
+//   prev   the exposure so far (linear light x seconds, unbounded: use a float format)
+//   light  the light arriving now, linear, per second
+//   dt     step length in seconds (iTimeDelta), >= 0
+//   ->     prev + light * dt
+//   e.g. vec4 s = kit_buf_expose(vec4(0.0), vec4(2.0), iTimeDelta);
+vec4 kit_buf_expose(vec4 prev, vec4 light, float dt) { return prev + light * max(dt, 0.0); }
+
 // kit_buf_trail_over(prev, elem, halfLife, dt): a premultiplied element composited
 // over its decayed previous state ("over" instead of "max"): dark or translucent
 // elements leave trails too, and the result stays premultiplied.
