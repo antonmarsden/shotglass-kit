@@ -1,0 +1,333 @@
+# The kit's buffer test film (buffer/): real-world feedback effects, one shot each,
+# built from buffer/'s helpers plus core/. Every public function in buffer/ is called
+# here or in tests/buffer-loop. CI checks it strictly, renders it on Mesa and draws a
+# strip of it. Buffers live only for their shot (from/to), so each shot's fold is short.
+#
+#   light-painting  a long exposure of a sparkler (kit_buf_expose): ballistic sparks
+#                   that fork and cool, ending on the finished photograph
+#   ink             ink drops bleeding into damp paper: water wicking through the
+#                   fibres carries pigment and leaves a dark rim (six chained steps
+#                   per frame)
+#   reaction        reaction-diffusion patterns (coral, then mitosis): Gray-Scott, eight
+#                   chained steps per frame, reseeded with another preset at a reset
+#   ripples         raindrops on a pool: the wave equation from history (@prev and
+#                   frame = -2), 16-bit height packed into rgba8, refracting the tiles
+#   tunnel          camera pointed at its own monitor: zoom-rotate feedback of the
+#                   composite (after = "emblem"), with a HUD layer that stays out of it
+#   vhs             analogue ghosting: chroma echoes from a pure history buffer
+#   crt             a raymarched green-screen terminal running Life on its curved
+#                   tube, with phosphor persistence
+title = "shotglass-kit buffer tests"
+aspect = [16, 9]
+fps = 30
+
+[[shot]]
+id = "light-painting"
+scene = "scenes/night.glsl"
+duration = 4
+
+[[shot]]
+id = "ink"
+scene = "scenes/paper.glsl"
+duration = 4
+
+[[shot]]
+id = "reaction"
+scene = "scenes/stage.glsl"
+duration = 4
+
+[[shot]]
+id = "ripples"
+scene = "scenes/pool.glsl"
+duration = 4
+
+[[shot]]
+id = "tunnel"
+scene = "scenes/stage.glsl"
+duration = 4
+
+[[shot]]
+id = "vhs"
+scene = "scenes/bars.glsl"
+duration = 3
+
+[[shot]]
+id = "crt"
+scene = "scenes/stage.glsl"
+duration = 4
+
+# --- light painting --------------------------------------------------------------
+
+[[buffer]]
+id = "light"
+scene = "buffers/light.glsl"
+from = "light-painting"
+to = "light-painting.end"
+format = "rgba16f"                 # the exposure adds up past 1
+channels = ["@prev"]
+
+[[layer]]
+id = "light-show"
+scene = "layers/light.glsl"
+from = "light-painting"
+to = "light-painting.end"
+channels = ["@input", "@light"]
+
+# --- ink: six steps of water and pigment flow per frame, chained ------------------
+# ink1 steps ink6's previous state (and lays the damp paper, and drops the ink),
+# ink2..ink6 the one before them this frame.
+
+[[buffer]]
+id = "ink1"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = [{ source = "@ink6", frame = "prev" }]
+params.FIRST = 1
+
+[[buffer]]
+id = "ink2"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink1"]
+
+[[buffer]]
+id = "ink3"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink2"]
+
+[[buffer]]
+id = "ink4"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink3"]
+
+[[buffer]]
+id = "ink5"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink4"]
+
+[[buffer]]
+id = "ink6"
+scene = "buffers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+size = [128, 72]
+format = "rgba32f"
+channels = ["@ink5"]
+
+[[layer]]
+id = "ink-show"
+scene = "layers/bleed.glsl"
+from = "ink"
+to = "ink.end"
+channels = ["@input", "@ink6"]
+
+# --- reaction: eight Gray-Scott steps per frame, chained -------------------------
+# rd1 steps rd8's previous state, rd2..rd8 step the one before them this frame.
+# A reset reseeds rd1 (its init pass, which replaces @prev on the reset frame) with
+# another layout and preset.
+
+[[buffer]]
+id = "rd1"
+scene = "buffers/rd.glsl"
+init = "buffers/rd_seed.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = [{ source = "@rd8", frame = "prev" }, "@prev"]
+params.FIRST = 1
+
+[[buffer]]
+id = "rd2"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd1"]
+
+[[buffer]]
+id = "rd3"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd2"]
+
+[[buffer]]
+id = "rd4"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd3"]
+
+[[buffer]]
+id = "rd5"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd4"]
+
+[[buffer]]
+id = "rd6"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd5"]
+
+[[buffer]]
+id = "rd7"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd6"]
+
+[[buffer]]
+id = "rd8"
+scene = "buffers/rd.glsl"
+from = "reaction"
+to = "reaction.end"
+reset = ["reaction + 2"]
+size = [192, 108]
+format = "rgba32f"
+channels = ["@rd7"]
+
+[[layer]]
+id = "reaction-show"
+scene = "layers/reaction.glsl"
+from = "reaction"
+to = "reaction.end"
+channels = ["@input", "@rd8"]
+
+# --- ripples ---------------------------------------------------------------------
+
+[[buffer]]
+id = "wave"
+scene = "buffers/wave.glsl"
+from = "ripples"
+to = "ripples.end"
+scale = 0.5
+format = "rgba8"
+history = 2
+channels = ["@prev", { source = "@wave", frame = -2 }]
+
+[[layer]]
+id = "ripple-show"
+scene = "layers/ripples.glsl"
+from = "ripples"
+to = "ripples.end"
+channels = ["@input", "@wave"]
+
+# --- video feedback tunnel -------------------------------------------------------
+
+[[layer]]
+id = "emblem"
+scene = "layers/emblem.glsl"
+from = "tunnel"
+to = "tunnel.end"
+
+[[buffer]]
+id = "monitor"
+scene = "buffers/tunnel.glsl"
+after = "emblem"                   # the composite so far: stage and emblem
+from = "tunnel"
+to = "tunnel.end"
+scale = 0.5
+channels = ["@prev", "@input"]
+
+[[layer]]
+id = "tunnel-show"
+scene = "layers/view.glsl"
+from = "tunnel"
+to = "tunnel.end"
+channels = ["@monitor"]
+
+[[layer]]
+id = "hud"                         # above the buffer: never fed back
+scene = "layers/hud.glsl"
+from = "tunnel"
+to = "tunnel.end"
+
+# --- VHS ghosting ----------------------------------------------------------------
+
+[[buffer]]
+id = "tape"
+scene = "buffers/copy.glsl"
+from = "vhs"
+to = "vhs.end"
+scale = 0.5
+format = "rgba8"
+history = 6
+channels = ["@picture"]
+
+[[layer]]
+id = "vhs-show"
+scene = "layers/vhs.glsl"
+from = "vhs"
+to = "vhs.end"
+channels = [
+  "@tape",
+  { source = "@tape", frame = -2 },
+  { source = "@tape", frame = -4 },
+  { source = "@tape", frame = -6 },
+]
+
+# --- CRT terminal ----------------------------------------------------------------
+
+[[buffer]]
+id = "life"
+scene = "buffers/life.glsl"
+from = "crt"
+to = "crt.end"
+size = [48, 30]
+format = "rgba8"
+channels = ["@prev"]
+
+[[buffer]]
+id = "phosphor"
+scene = "buffers/phosphor.glsl"
+from = "crt"
+to = "crt.end"
+size = [384, 240]
+channels = ["@prev", "@life"]
+
+[[layer]]
+id = "crt-show"
+scene = "layers/crt.glsl"
+from = "crt"
+to = "crt.end"
+channels = ["@phosphor"]                # draws the whole shot: a raymarched terminal

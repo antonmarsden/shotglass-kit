@@ -1,0 +1,27 @@
+# The kit's warm-loop buffer film (buffer/): incense smoke curling up in a dark room,
+# a seamless loop. The smoke is a buffer advected along a curl-noise field that turns
+# once per period, fed by two glowing sticks, fading with a half-life. With
+# loop = "warm" frame 0 continues from the end of the period before, so the smoke is
+# already there at the seam and nothing resets; the half-life (0.75 s) is short
+# against the period (6 s), so what the pre-roll leaves is under 1/256 and the loop
+# has no visible jump. CI checks it strictly, renders it on Mesa and draws a strip.
+title = "shotglass-kit buffer loop"
+aspect = [16, 9]
+fps = 30
+loop = "warm"
+
+[[shot]]
+id = "room"
+scene = "scenes/room.glsl"
+duration = 6
+
+[[buffer]]
+id = "smoke"
+scene = "buffers/smoke.glsl"
+scale = 0.5
+channels = ["@prev"]
+
+[[layer]]
+id = "smoke-show"
+scene = "layers/smoke.glsl"
+channels = ["@input", "@smoke"]

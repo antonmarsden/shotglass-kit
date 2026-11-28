@@ -25,7 +25,7 @@ concurrency:
 # shotglass is pinned so a new engine can't turn CI red on its own. To upgrade:
 # bump SHOTGLASS_REV to a commit on shotglass main, fix anything new, commit both.
 env:
-  SHOTGLASS_REV: "9d7dde36aced3a194d31f1d1186a2345d8e9cc2c"
+  SHOTGLASS_REV: "15c2f2d2804f61b0b5b0e8d174f0159d46e73558"
   RUST_TOOLCHAIN: "1.100.0"
 
 jobs:
@@ -68,7 +68,7 @@ jobs:
       # Each library folder and the name the test films include it by
       # (#include <kit/noise.glsl> is core/noise.glsl). Add new libraries here.
       - name: Library list
-        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend quality:quality' >> "$GITHUB_ENV"
+        run: echo 'LIBS=core:kit transitions:transitions sound:sound text:text fx:fx blend:blend quality:quality buffer:buffer' >> "$GITHUB_ENV"
 
       # fx/ and blend/ passes are used by name from a layer (type = "fx/grade", blend =
       # "blend/screen"), and quality/ metrics from a metric test (tests/unit/quality/
@@ -117,7 +117,7 @@ jobs:
               fi
             done
           done
-          for f in core/*.glsl sound/*.glsl text/*.glsl; do
+          for f in core/*.glsl sound/*.glsl text/*.glsl buffer/*.glsl; do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE --exclude-dir=unit "\b$fn *\(" tests; then
                 echo "::error file=$f::$fn is never called by a test film under tests/"
@@ -129,11 +129,13 @@ jobs:
 
       # CONVENTIONS.md §6: every public function's contract has a unit test. Mix-only
       # files (`// sound: mix only`) are skipped: they read the mix's buses, which only
-      # a mix shader has, so tests/mix covers them.
+      # a mix shader has, so tests/mix covers them. buffer/sample.glsl is skipped: its
+      # functions read a sampler, which unit tests don't have (CONVENTIONS.md, Exceptions);
+      # its maths is buffer/math.glsl, tested here, and tests/buffer calls every function.
       - name: Every public function has a unit test
         run: |
           missing=0
-          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl); do
+          for f in $(grep -L '^// sound: mix only' core/*.glsl sound/*.glsl text/*.glsl fx/*.glsl blend/*.glsl quality/*.glsl buffer/math.glsl); do
             for fn in $(grep -oE '^[a-z0-9_]+ kit_[a-z0-9]+(_[a-z0-9]+)*\(' "$f" | sed -E 's/^[a-z0-9_]+ //; s/\($//; /^kit_private_/d' | sort -u); do
               if ! grep -rqE "\b$fn *\(" tests/unit; then
                 echo "::error file=$f::$fn has no unit test under tests/unit/ (CONTRIBUTING.md, \"Unit-test its contract\")"
@@ -203,6 +205,8 @@ jobs:
           shotglass check tests/text --web --strict --no-gpu
           shotglass check tests/typography --web --strict --no-gpu
           shotglass check tests/layers --web --strict --no-gpu
+          shotglass check tests/buffer --web --strict --no-gpu
+          shotglass check tests/buffer-loop --web --strict --no-gpu
 
       # Unit and property tests of each function's documented contract (tests/unit,
       # `shotglass test`: engine assertions, run on the GPU). Each file also passes the
@@ -223,6 +227,18 @@ jobs:
           xvfb-run -a shotglass check tests/text --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/typography --size 320x180 --frames 1
           xvfb-run -a shotglass check tests/layers --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/buffer --size 320x180 --frames 1
+          xvfb-run -a shotglass check tests/buffer-loop --size 320x180 --frames 1
+
+      # The buffer showcase films (buffer/): two frames of each effect, and the warm
+      # loop's first frame next to its last (they should continue seamlessly). Uploaded
+      # with the other strips to look at, not compared: a buffer is a fold over many
+      # frames, and long folds over float state drift apart between GPUs and drivers.
+      - name: Buffer films render a strip
+        run: |
+          mkdir -p golden-out
+          xvfb-run -a shotglass strip tests/buffer --size 320x180 --cols 4 --out golden-out/buffer.png --at light-painting+1,light-painting+3.5,ink+1,ink+3.9,reaction+1.9,reaction+3.9,ripples+1.5,ripples+3.5,tunnel+1.5,tunnel+3.5,vhs+1,vhs+2.5,crt+1.5,crt+3.5
+          xvfb-run -a shotglass strip tests/buffer-loop --size 320x180 --cols 4 --out golden-out/buffer-loop.png --at 0,2,4,5.9667
 
       # Golden picture (tests/golden/film.png, an llvmpipe render like the engine's golden
       # tests): one frame of each test-film scene and two transitions mid-way, so a change
@@ -311,6 +327,8 @@ jobs:
             golden-out/animation.png
             golden-out/text.png
             golden-out/layers.png
+            golden-out/buffer.png
+            golden-out/buffer-loop.png
           if-no-files-found: ignore
       # The actual renders next to their diffs: <name>.diff.png (magenta = differs),
       # <name>.diff.wav, and transitions/ (expected.png, endpoints.png, endpoints.diff.png).

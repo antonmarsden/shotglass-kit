@@ -96,7 +96,11 @@ differ slightly, and should stay visually the same.
   to `int` is undefined (document the input range, or clamp first).
 - **No state between frames or samples.** No feedback, no reading the previous frame,
   no time accumulated across calls: shotglass renders any frame and any chunk of
-  sound on its own, in any order.
+  sound on its own, in any order. The one place state exists is a shotglass
+  `[[buffer]]`, whose state is the engine's fold of one step per frame from its last
+  reset; `buffer/` helps write those steps. Its functions keep no state themselves:
+  they're pure functions of the state they're handed and a step length `dt`
+  (`iTimeDelta`, exactly 1/fps in a buffer), never wall time or render scale.
 - **No driver-dependent features:** no `gl_FragCoord` inside library code (take
   `fragCoord` as a parameter), no extensions.
 - **Same results at GLSL 3.30 core and ES 3.00.** Both get `highp` float and int;
@@ -169,7 +173,7 @@ So:
 
 ## 6. Tests
 
-- **Every public function is called by a test film** (`tests/film` or `tests/animation`, or `tests/sound`
+- **Every public function is called by a test film** (`tests/film` or `tests/animation`, `tests/buffer` or `tests/buffer-loop` for `buffer/`, or `tests/sound`
   `tests/instruments` and `tests/mix` for the `sound/` library, or `tests/text` and
   `tests/typography` for `text/`): a scene, a transition, the music or the mix. Calling it, not just
   including the file, so a reviewer can see what it does in the strip (or hear it) and
@@ -280,4 +284,5 @@ Existing code that doesn't follow these rules, and why.
 | where | rule | why it stays |
 |---|---|---|
 | `transitions/wipe.glsl` | §2 screen lengths in frame heights | `softness` is in uv units (0..1 on each axis), as in the engine's built-in `wipe`, for the same reason. |
+| `buffer/sample.glsl` | §6 every public function has a unit test | Its functions read a `sampler2D` (buffer state), and unit tests have no samplers. Their maths is in `buffer/math.glsl`, which is unit-tested; `tests/buffer` and `tests/buffer-loop` call every one of them. |
 | `fx/dither-ops.glsl` | §6 fx maths in `fx/ops.glsl` | Shares core rounding through its canonical include while keeping the other passes independent of the core library. |
