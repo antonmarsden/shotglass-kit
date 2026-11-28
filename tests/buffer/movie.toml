@@ -15,7 +15,8 @@
 #   tunnel          camera pointed at its own monitor: zoom-rotate feedback of the
 #                   composite (after = "emblem"), with a HUD layer that stays out of it
 #   vhs             analogue ghosting: chroma echoes from a pure history buffer
-#   crt             a green-screen terminal running Life, with phosphor persistence
+#   crt             a raymarched green-screen terminal running Life on its curved
+#                   tube, with phosphor persistence
 title = "shotglass-kit buffer tests"
 aspect = [16, 9]
 fps = 30
@@ -52,7 +53,7 @@ duration = 3
 
 [[shot]]
 id = "crt"
-scene = "scenes/desk.glsl"
+scene = "scenes/stage.glsl"
 duration = 4
 
 # --- light painting --------------------------------------------------------------
@@ -329,4 +330,4 @@ id = "crt-show"
 scene = "layers/crt.glsl"
 from = "crt"
 to = "crt.end"
-channels = ["@input", "@phosphor"]
+channels = ["@phosphor"]                # draws the whole shot: a raymarched terminal

@@ -126,7 +126,8 @@ packed channels, weighed, is the Laplacian or gradient of the value
 - **VHS ghosting:** a pure history buffer of the picture (`history = 6`) with chroma
   echoes weighed by `kit_buf_decay`.
 - **CRT phosphor:** Life on a 48x30 torus, drawn into a phosphor buffer with a
-  half-life per channel (green lingers).
+  half-life per channel (green lingers), shown on the curved tube of a raymarched
+  terminal: rays that hit the glass read the phosphor where they hit.
 - **Seamless smoke loop (`loop = "warm"`):** density advected through a curl-noise field
   that turns once per period; its half-life is short against the period, so the warm
   seam carries the smoke over with no jump.
