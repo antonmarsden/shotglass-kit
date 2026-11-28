@@ -1,5 +1,5 @@
-// The floor of a swimming pool: pale tiles with dark grout under blue water, and
-// slow caustic light.
+// The floor of a swimming pool: pale tiles with dark grout under blue water. The
+// caustics come from the ripples (layers/ripples.glsl), not from here.
 #include <kit/noise.glsl>
 #include <kit/color.glsl>
 
@@ -13,8 +13,6 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 tile = mix(vec3(0.05, 0.18, 0.28), vec3(0.55, 0.85, 0.95) * shade, grout);
     // A lane line.
     if (abs(p.y - 0.5) < 0.04) tile *= vec3(0.25, 0.3, 0.6);
-    vec2 cell = kit_cellular_noise(p * 5.0 + vec2(0.3, 0.2) * iTime);
-    float caustic = pow(clamp(1.0 - (cell.y - cell.x) * 3.0, 0.0, 1.0), 4.0);
-    vec3 col = tile * vec3(0.35, 0.75, 0.9) + 0.25 * caustic * vec3(0.8, 1.0, 1.0);
+    vec3 col = tile * vec3(0.35, 0.75, 0.9);
     fragColor = vec4(kit_srgb_encode(col * kit_vignette(uv, 0.3, 0.8)), 1.0);
 }
