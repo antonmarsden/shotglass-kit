@@ -15,7 +15,6 @@
 // - From 2.6 s the sparkler burns out: the head dims and stops shedding sparks, the
 //   last sparks finish their flight, and the picture holds the finished photograph.
 #include <kit/noise.glsl>
-#include <kit/sdf.glsl>
 #include <buffer/math.glsl>
 
 const float LOOKBACK = 12.0;             // frames of spark births drawn (longest life 0.4 s)
@@ -34,11 +33,21 @@ vec2 head(float t, float aspect) {
 }
 
 // Light spread along a segment: a thin line whose energy per second is shared over
-// the segment's length, so a short (slow) segment is brighter.
+// the segment's length, so a short (slow) segment is brighter. Its ends ramp linearly
+// over one line width either side of each endpoint instead of having round caps, so
+// where one piece ends and the next begins (this frame's and the next frame's, or two
+// pieces of one frame) the two ramps sum to one: no bright bead at the joint.
 float line(vec2 p, vec2 a, vec2 b, float width, float px) {
-    float d = kit_sd_segment(p, a, b);
-    float spread = px / max(length(b - a), px);
-    return exp2(-d * d / (width * width)) * spread;
+    vec2 ab = b - a;
+    float len = length(ab);
+    float spread = px / max(len, px);
+    if (len < 1e-6) return exp2(-dot(p - a, p - a) / (width * width)) * spread;
+    vec2 dir = ab / len;
+    float s = dot(p - a, dir);                       // along the segment
+    float d = abs(dot(p - a, vec2(-dir.y, dir.x)));  // across it
+    float h = width;
+    float ends = clamp((s + h) / (2.0 * h), 0.0, 1.0) * clamp((len + h - s) / (2.0 * h), 0.0, 1.0);
+    return exp2(-d * d / (width * width)) * ends * spread;
 }
 
 // Colour of a cooling spark, u = age / life: white, yellow, orange, deep red.
