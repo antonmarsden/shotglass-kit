@@ -33,7 +33,7 @@ duration = 4
 
 [[shot]]
 id = "reaction"
-scene = "scenes/paper.glsl"
+scene = "scenes/stage.glsl"
 duration = 4
 
 [[shot]]

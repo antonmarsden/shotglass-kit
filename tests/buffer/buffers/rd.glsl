@@ -1,7 +1,9 @@
 // One Gray-Scott step of the state on iChannel0 (rd8's previous state for rd1, the
 // buffer before it for rd2..rd8): eight chained buffers give eight steps per film
 // frame. The preset is picked by z, which the seed writes: 0 coral, 1 mitosis, and
-// the rest for completeness (2 maze, 3 spots, 4 waves). Edges clamp.
+// the rest for completeness (2 maze, 3 spots, 4 waves). The culture grows only on the
+// agar, a disc of radius DISH frame heights in the middle: outside it the state is
+// held at A = 1, B = 0, so growth stops at the dish wall.
 #include <buffer/sample.glsl>
 
 vec2 preset(float z) {
@@ -13,8 +15,12 @@ vec2 preset(float z) {
     return kit_buf_gs_coral();
 }
 
+const float DISH = 0.42;
+
 vec4 rd_step(sampler2D state, ivec2 p) {
     vec4 s = kit_buf_fetch(state, p, false);
+    vec2 q = (vec2(p) + 0.5 - 0.5 * iResolution.xy) / iResolution.y;
+    if (length(q) > DISH) return vec4(1.0, 0.0, s.z, 1.0);
     vec4 lap = kit_buf_laplacian(state, p, false);
     return vec4(kit_buf_gray_scott(s.xy, lap.xy, preset(s.z)), s.z, 1.0);
 }
