@@ -12,6 +12,7 @@ Each folder is a separate library that a film picks (and pins) on its own:
 | [`core/`](core) | `shotglass-kit/core` | eases, cartoon animation (back, elastic and bounce eases, squash and stretch, anticipation and settle, held keyed poses, animating on twos), deterministic hashes and noise (value, gradient, simplex, cellular), colour (tonemapping, sRGB, palettes, vignette, grain), signed distance shapes and operators (smooth blends with colour weights, limited and polar repetition), raymarching (sphere tracing, normals, soft shadows, ambient occlusion), a camera (look-at, pixel rays, orbit, dolly, dolly zoom, depth of field) |
 | [`transitions/`](transitions) | `shotglass-kit/transitions` | `crossfade`, `fade`, `iris`, `dissolve`, `wipe` (moved from the engine, same parameters, same pixels) |
 | [`fx/`](fx) | `shotglass-kit/fx` | passes for [layers](https://github.com/antonmarsden/shotglass#layers), used as `type = "fx/<name>"`: `grade` (exposure, lift/gain, contrast, saturation), `grain`, `dither`, `vignette`, `letterbox`, `place` (logo bug / picture-in-picture), `chroma_key` (keyed plates), and the bloom recipe `bright` + `blur` |
+| [`buffer/`](buffer) | `shotglass-kit/buffer` | helpers for [feedback buffers](buffer/README.md): trails with a half-life, Laplacians and blurs of state, zoom/rotate and advection feedback, Gray-Scott reaction-diffusion with presets, the wave equation, Life, reset seeds, rgba8 state packing; showcase films of light painting, ink, ripples, a feedback tunnel, VHS ghosting, CRT phosphor and a seamless smoke loop |
 | [`blend/`](blend) | `shotglass-kit/blend` | blend modes for layers, used as `blend = "blend/<name>"`: `multiply`, `screen`, `overlay`, `hardlight`, `add`, `darken`, `lighten`, `difference`, `colordodge`, `colorburn`, `softlight`, with premultiplied alpha handled once in `modes.glsl` |
 | [`text/`](text) | `shotglass-kit/text` | [Text blocks, glyph runs, kinetic type, subtitles and computed numbers](#glyph-runs) |
 | [`quality/`](quality) | `shotglass-kit/quality` | metrics for [`shotglass quality`](https://github.com/antonmarsden/shotglass#quality-metrics), used from a film's `quality.toml`: picture metrics as `use = "quality/picture/<name>"` (`alias`, `banding`, `exposure`, `palette`, `shimmer`, `stepping`, `outlines`, `flatness`), sound metrics as `use = "quality/sound/<name>"` (`clicks`) |
@@ -34,6 +35,7 @@ quality = { version = "0.1", source = "https://github.com/antonmarsden/shotglass
 text = { version = "0.2", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "text" }
 fx = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "fx" }
 blend = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "blend" }
+buffer = { version = "0.1", source = "https://github.com/antonmarsden/shotglass-kit", subdir = "buffer" }
 ```
 
 ```glsl
@@ -250,6 +252,18 @@ the Transitions section is a file path, which ends in `.glsl`, so the two don't 
 A layer reads another only if it comes later in `movie.toml` and the ids are plain
 identifiers (`bright_pass`, not `bright-pass`); give the helper layers the same `from`
 and `to`, because `@<id>` is black while that layer isn't active.
+
+### Feedback buffers
+
+`buffer/` holds helpers for shotglass's [feedback buffers](https://github.com/antonmarsden/shotglass/blob/main/docs/buffers.md)
+(needs shotglass 0.1.11): see [buffer/README.md](buffer/README.md) for the functions,
+their determinism notes, packing precision and the recipes behind the showcase films
+[`tests/buffer`](tests/buffer) and [`tests/buffer-loop`](tests/buffer-loop).
+
+```sh
+shotglass strip tests/buffer --size 320x180 --count 12 --out buffer.png
+shotglass play tests/buffer-loop             # a seamless loop = "warm"
+```
 
 ### Text
 
@@ -581,7 +595,8 @@ uses every transition; [`tests/sound`](tests/sound) and
 library's: the first's music calls every envelope, note and tempo function, the second
 plays a phrase on each instrument and drum, the third's mix turns on one mix effect a
 bar; [`tests/layers`](tests/layers) shows every blend mode over one picture and then each fx pass;
-[`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
+[`tests/buffer`](tests/buffer) and [`tests/buffer-loop`](tests/buffer-loop) show
+`buffer/`'s feedback effects; [`tests/text`](tests/text) draws a title card and a lower third with `text/` in three
 Google Fonts families (declared in the kit's `shotglass.toml`, pinned in its
 `shotglass.lock`). They use the libraries in this checkout, declared once in the
 [`shotglass.toml`](shotglass.toml) at the kit's root (the test films' project), so they
