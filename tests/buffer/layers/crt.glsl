@@ -13,8 +13,8 @@
 #include <kit/color.glsl>
 #include <buffer/sample.glsl>
 
-const vec3 TUBE_C = vec3(0.0, 0.03, -0.9);   // centre of the glass's sphere
-const float TUBE_R = 1.19;                   // its radius: the apex is at z = 0.29
+const vec3 TUBE_C = vec3(0.0, 0.03, -1.68);  // centre of the glass sphere
+const float TUBE_R = 2.0;                    // its radius: apex at z = 0.32, corners above the recess floor
 const vec2 OPEN = vec2(0.32, 0.245);         // half-size of the screen opening
 const vec3 LAMP = vec3(-1.6, 1.4, 1.2);      // the room lamp
 
@@ -23,13 +23,14 @@ float sd_case(vec3 p) {
     float back = kit_sd_round_box(p - vec3(0.0, -0.01, -0.36), vec3(0.32, 0.29, 0.22), 0.09);
     float d = kit_op_smin(body, back, 0.06);
     // The recess round the tube, with a bevelled edge.
-    float recess = kit_sd_round_box(p - vec3(0.0, 0.03, 0.31), vec3(OPEN + 0.035, 0.07), 0.035);
+    float recess = kit_sd_round_box(p - vec3(0.0, 0.03, 0.31), vec3(OPEN + 0.035, 0.07), 0.015);
     return kit_op_smax(d, -recess, 0.015);
 }
 
 float sd_tube(vec3 p) {
     float glass = length(p - TUBE_C) - TUBE_R;
-    float frame = kit_sd_round_box(p - vec3(0.0, 0.03, 0.0), vec3(OPEN, 0.6), 0.04);
+    // The glass fills the recess to its walls, so no side of it shows.
+    float frame = kit_sd_round_box(p - vec3(0.0, 0.03, 0.0), vec3(OPEN + 0.035, 0.6), 0.015);
     return max(glass, frame);
 }
 
@@ -46,14 +47,18 @@ int material(vec3 p) {
 
 // The screen's picture at a point on the glass: the phosphor, scanlines, corners.
 vec3 screen(vec3 p) {
-    vec2 s = (p.xy - vec2(0.0, 0.03)) / OPEN;        // -1..1 across the opening
+    vec2 s = (p.xy - vec2(0.0, 0.03)) / OPEN;        // -1..1 across the lit area
     vec2 su = s * 0.5 + 0.5;
     vec2 size = vec2(textureSize(iChannel0, 0));
     vec3 glow = kit_buf_sample(iChannel0, su, false).rgb;
     vec3 bloom = kit_buf_box(iChannel0, ivec2(su * size), false).rgb;
     float scan = 0.7 + 0.3 * sin(su.y * size.y * 6.28318531);
-    float corner = 1.0 - smoothstep(0.75, 1.15, length(s * vec2(0.85, 1.0)));
-    return (vec3(0.004, 0.010, 0.006) + glow * scan + 0.3 * bloom) * (0.35 + 0.65 * corner);
+    // The lit area: a rectangle with slightly rounded corners, black glass round it,
+    // a little darker towards its edges (a squarish falloff, not a circle).
+    float lit = 1.0 - smoothstep(-0.02, 0.0, kit_sd_box(s, vec2(1.0 - 0.06)) - 0.06);
+    vec2 e = abs(s);
+    float edge = 1.0 - 0.35 * smoothstep(0.6, 1.0, pow(pow(e.x, 6.0) + pow(e.y, 6.0), 1.0 / 6.0));
+    return vec3(0.004, 0.010, 0.006) + (glow * scan + 0.3 * bloom) * edge * lit;
 }
 
 // The phosphor's average glow: the light the screen throws on the room.
