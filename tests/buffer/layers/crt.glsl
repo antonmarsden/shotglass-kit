@@ -5,7 +5,7 @@
 // the picture wraps round the curve, with scanlines, darker corners where the tube
 // turns away, and the room's lamp reflected more strongly towards the edges (Fresnel).
 // The screen lights the bezel and the desk green, with the phosphor's average glow.
-// The camera starts at a three-quarter view and pushes slowly in.
+// The camera starts at a three-quarter view and pushes slowly in. Four rays per pixel.
 #include <kit/sdf.glsl>
 #include <kit/raymarch.glsl>
 #include <kit/camera.glsl>
@@ -41,7 +41,9 @@ float kit_scene(vec3 p) { return min(min(sd_case(p), sd_tube(p)), sd_desk(p)); }
 // Which surface p is on: 0 case, 1 tube, 2 desk.
 int material(vec3 p) {
     float c = sd_case(p), t = sd_tube(p), d = sd_desk(p);
-    if (t < c && t < d) return 1;
+    // Where the glass meets the bezel both are within a hair of the hit point; favour
+    // the glass there, or rounding speckles the top of the screen with beige.
+    if (t < c + 0.002 && t < d) return 1;
     return d < c ? 2 : 0;
 }
 
@@ -86,23 +88,15 @@ vec3 room(vec3 rd) {
     return vec3(0.012, 0.010, 0.010) * (0.6 + 0.4 * rd.y) + vec3(1.0, 0.75, 0.45) * lamp + cool;
 }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-    vec2 uv = fragCoord / iResolution.xy;
-    float t = iTime;
-    vec3 ta = vec3(0.0, 0.0, 0.05);
-    float dist = mix(2.2, 1.75, smoothstep(0.0, 4.0, t));
-    vec3 ro = kit_cam_orbit(ta, vec2(-0.55 + 0.05 * t, 0.16), dist);
-    mat3 cam = kit_cam_look_at(ro, ta, 0.0);
-    vec3 rd = kit_cam_ray(cam, fragCoord, iResolution.xy, 0.7);
-
+// One ray: what the camera sees along rd, tonemapped (display colour, before sRGB).
+vec3 shade(vec3 ro, vec3 rd, vec3 glow) {
     vec3 col = room(rd);
-    float hit = kit_raymarch(ro, rd, 160, 0.0008, 8.0);
+    float hit = kit_raymarch(ro, rd, 128, 0.0008, 8.0);
     if (hit >= 0.0) {
         vec3 p = ro + rd * hit;
         vec3 n = kit_normal(p, 0.0008);
         int m = material(p);
         vec3 l = normalize(LAMP - p);
-        vec3 glow = screen_light();
         // The screen as a light: from its centre, towards whatever faces it.
         vec3 sc = vec3(0.0, 0.03, 0.3);
         vec3 ls = sc - p;
@@ -126,6 +120,24 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             if (m == 2) col = mix(col, room(rd), smoothstep(2.0, 4.0, hit));   // the desk fades into the dark
         }
     }
-    col *= kit_vignette(uv, 0.4, 0.7);
-    fragColor = vec4(kit_srgb_encode(kit_aces(col * 1.4)), 1.0);
+    return kit_aces(col * 1.4);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = fragCoord / iResolution.xy;
+    float t = iTime;
+    vec3 ta = vec3(0.0, 0.0, 0.05);
+    float dist = mix(2.2, 1.75, smoothstep(0.0, 4.0, t));
+    vec3 ro = kit_cam_orbit(ta, vec2(-0.55 + 0.05 * t, 0.16), dist);
+    mat3 cam = kit_cam_look_at(ro, ta, 0.0);
+    vec3 glow = screen_light();
+    // Anti-aliasing: four rays per pixel on a rotated grid, averaged after tonemapping
+    // (so a bright edge doesn't dominate its pixel).
+    vec2 offs[4] = vec2[4](vec2(0.125, 0.375), vec2(0.375, -0.125), vec2(-0.125, -0.375), vec2(-0.375, 0.125));
+    vec3 col = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+        col += shade(ro, kit_cam_ray(cam, fragCoord + offs[i], iResolution.xy, 0.7), glow);
+    }
+    col *= 0.25 * kit_vignette(uv, 0.4, 0.7);
+    fragColor = vec4(kit_srgb_encode(col), 1.0);
 }
