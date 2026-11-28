@@ -28,9 +28,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // The colony: B as density; its height is shaded from the gradient of B.
     vec2 size = vec2(textureSize(iChannel1, 0));
     float b = kit_buf_sample(iChannel1, uv, false).y;
-    vec2 g = kit_buf_gradient(iChannel1, ivec2(uv * size), false, vec4(0.0, 1.0, 0.0, 0.0));
-    float cover = smoothstep(0.08, 0.3, b);
-    float relief = clamp(0.5 + 6.0 * dot(-g, light), 0.0, 1.0);
+    // Gradient from bilinear samples one texel apart, so the shading is as smooth as B
+    // itself (a texel-centred gradient would step in blocks of one texel).
+    vec2 tx = 1.0 / size;
+    vec2 g = 0.5 * vec2(kit_buf_sample(iChannel1, uv + vec2(tx.x, 0.0), false).y - kit_buf_sample(iChannel1, uv - vec2(tx.x, 0.0), false).y,
+                        kit_buf_sample(iChannel1, uv + vec2(0.0, tx.y), false).y - kit_buf_sample(iChannel1, uv - vec2(0.0, tx.y), false).y);
+    // Wide edge ramp: the grid is coarse, so a sharp threshold would show its texels.
+    float cover = smoothstep(0.05, 0.35, b) * (1.0 - smoothstep(DISH - 0.03, DISH - 0.005, r));
+    float relief = clamp(0.5 + 3.0 * dot(-g, light), 0.0, 1.0);
     vec3 colony = mix(vec3(0.80, 0.74, 0.58), vec3(0.95, 0.90, 0.78), smoothstep(0.2, 0.45, b));
     colony *= 0.75 + 0.5 * relief;
     float halo = kit_buf_blur(iChannel1, ivec2(uv * size), false).y;
@@ -44,8 +49,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float ring = smoothstep(DISH - px, DISH + px, r) * (1.0 - smoothstep(DISH + WALL - px, DISH + WALL + px, r));
     float face = dot(q / max(r, 1e-4), light);
     float rim = exp2(-pow((r - DISH - 0.5 * WALL) / (0.25 * WALL), 2.0));
-    vec3 glass = vec3(0.10, 0.11, 0.12) + vec3(0.9, 0.92, 1.0) * rim * (0.15 + 0.85 * smoothstep(0.3, 1.0, face))
-               + vec3(0.25) * rim * smoothstep(0.6, 1.0, -face);
+    vec3 glass = vec3(0.10, 0.11, 0.12) + vec3(0.45, 0.46, 0.5) * rim * (0.1 + 0.9 * smoothstep(0.3, 1.0, face))
+               + vec3(0.1) * rim * smoothstep(0.6, 1.0, -face);
     col = mix(col, glass, ring);
     // A soft highlight on the lid across the upper left.
     float sheen = exp2(-pow(length(q - vec2(-0.16, 0.18)) / 0.12, 2.0)) * (1.0 - smoothstep(DISH, DISH + WALL, r));

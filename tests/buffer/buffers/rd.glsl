@@ -3,7 +3,8 @@
 // frame. The preset is picked by z, which the seed writes: 0 coral, 1 mitosis, and
 // the rest for completeness (2 maze, 3 spots, 4 waves). The culture grows only on the
 // agar, a disc of radius DISH frame heights in the middle: outside it the state is
-// held at A = 1, B = 0, so growth stops at the dish wall.
+// held at A = 0.3, B = 0: the wall feeds less than the agar, so colonies keep a
+// little clear of it instead of creeping round it.
 #include <buffer/sample.glsl>
 
 vec2 preset(float z) {
@@ -20,7 +21,7 @@ const float DISH = 0.42;
 vec4 rd_step(sampler2D state, ivec2 p) {
     vec4 s = kit_buf_fetch(state, p, false);
     vec2 q = (vec2(p) + 0.5 - 0.5 * iResolution.xy) / iResolution.y;
-    if (length(q) > DISH) return vec4(1.0, 0.0, s.z, 1.0);
+    if (length(q) > DISH - 0.02) return vec4(0.3, 0.0, s.z, 1.0);
     vec4 lap = kit_buf_laplacian(state, p, false);
     return vec4(kit_buf_gray_scott(s.xy, lap.xy, preset(s.z)), s.z, 1.0);
 }
