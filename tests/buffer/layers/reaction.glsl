@@ -33,8 +33,10 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 tx = 1.0 / size;
     vec2 g = 0.5 * vec2(kit_buf_sample(iChannel1, uv + vec2(tx.x, 0.0), false).y - kit_buf_sample(iChannel1, uv - vec2(tx.x, 0.0), false).y,
                         kit_buf_sample(iChannel1, uv + vec2(0.0, tx.y), false).y - kit_buf_sample(iChannel1, uv - vec2(0.0, tx.y), false).y);
-    // Wide edge ramp: the grid is coarse, so a sharp threshold would show its texels.
-    float cover = smoothstep(0.05, 0.35, b) * (1.0 - smoothstep(DISH - 0.03, DISH - 0.005, r));
+    // A crisp edge where B crosses 0.2, anti-aliased over one screen pixel (fwidth), so
+    // the colony reads as a sharp-edged mound, not a blur, at any render size.
+    float w = max(fwidth(b), 1e-4);
+    float cover = smoothstep(0.2 - w, 0.2 + w, b);
     float relief = clamp(0.5 + 3.0 * dot(-g, light), 0.0, 1.0);
     vec3 colony = mix(vec3(0.80, 0.74, 0.58), vec3(0.95, 0.90, 0.78), smoothstep(0.2, 0.45, b));
     colony *= 0.75 + 0.5 * relief;
